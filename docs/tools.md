@@ -60,6 +60,15 @@ maiúsculas/minúsculas. Útil para descobrir o código IBGE a partir do nome.
     resultados.
 - **Endpoint**: mesmo de `listar_municipios`, com filtro aplicado localmente.
 
+### `obter_distritos_municipio`
+
+Lista os distritos de um município.
+
+- **Argumentos**:
+  - `codigo` (obrigatório): código IBGE do município com 7 dígitos (ex.:
+    `"3550308"`).
+- **Endpoint**: `GET /localidades/municipios/{codigo}/distritos`.
+
 ## Agregados / SIDRA
 
 ### `listar_agregados`

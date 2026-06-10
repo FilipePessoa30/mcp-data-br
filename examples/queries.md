@@ -47,6 +47,12 @@ ou para chamadas diretas via `mcp.call_tool`.
 }
 ```
 
+### Listar os distritos de um município
+
+```json
+{ "name": "obter_distritos_municipio", "arguments": { "codigo": "3550308" } }
+```
+
 ## Agregados / SIDRA
 
 ### Listar agregados disponíveis com filtro textual

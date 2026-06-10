@@ -10,9 +10,22 @@ from __future__ import annotations
 from typing import Any
 
 from ..clients.base import IBGEResult
-from ..clients.localidades import LocalidadesClient
+from ..clients.localidades import LOCALIDADES_PATH, LocalidadesClient
 from ..schemas.localidades import Estado, Municipio
-from ..utils.normalization import normalize_text
+from ..utils.errors import IBGEValidationError
+
+
+def _validar_codigo_municipio(codigo: str) -> int:
+    """Valida e converte um código IBGE de município (string) para `int`."""
+    valor = codigo.strip()
+    if not valor.isdigit():
+        raise IBGEValidationError(
+            f'Código de município inválido: "{codigo}". '
+            'Use o código IBGE numérico (ex.: "3550308").',
+            url=f"{LOCALIDADES_PATH}/municipios/{codigo}",
+            status_code=422,
+        )
+    return int(valor)
 
 
 class LocalidadesService:
@@ -23,11 +36,11 @@ class LocalidadesService:
 
     async def listar_regioes(self) -> IBGEResult:
         """Lista as 5 grandes regiões geográficas do Brasil."""
-        return await self._client.listar_regioes()
+        return await self._client.get_regioes()
 
     async def listar_estados(self, regiao: str | None = None) -> IBGEResult:
         """Lista estados, opcionalmente filtrados por sigla/ID de região."""
-        result = await self._client.listar_estados()
+        result = await self._client.get_estados()
         estados = [Estado.model_validate(item) for item in result.data]
 
         params: dict[str, Any] = {}
@@ -49,15 +62,18 @@ class LocalidadesService:
 
     async def obter_estado(self, uf: str) -> IBGEResult:
         """Obtém os detalhes de um estado por sigla (ex.: "SP") ou ID IBGE."""
-        return await self._client.obter_estado(uf)
+        return await self._client.get_estado(uf)
 
     async def listar_municipios(self, uf: str | None = None) -> IBGEResult:
         """Lista municípios, opcionalmente filtrados por estado."""
-        return await self._client.listar_municipios(uf=uf)
+        if uf:
+            return await self._client.get_municipios_by_uf(uf)
+        return await self._client.get_municipios()
 
     async def obter_municipio(self, codigo: str) -> IBGEResult:
         """Obtém os detalhes completos de um município pelo código IBGE."""
-        return await self._client.obter_municipio(codigo)
+        municipio_id = _validar_codigo_municipio(codigo)
+        return await self._client.get_municipio(municipio_id)
 
     async def buscar_municipios_por_nome(
         self, nome: str, uf: str | None = None, limit: int = 20
@@ -67,16 +83,17 @@ class LocalidadesService:
         A busca ignora maiúsculas/minúsculas e acentos (ex.: "sao jose"
         encontra "São José dos Campos").
         """
-        result = await self._client.listar_municipios(uf=uf)
+        result = await self._client.search_municipios(nome=nome, uf=uf)
         municipios = [Municipio.model_validate(item) for item in result.data]
+        encontrados = municipios[: max(limit, 0)]
 
-        termo = normalize_text(nome)
-        encontrados = [m for m in municipios if termo in normalize_text(m.nome)]
-        encontrados = encontrados[: max(limit, 0)]
-
-        params: dict[str, Any] = {"nome": nome, "limit": limit}
-        if uf:
-            params["uf"] = uf
+        params: dict[str, Any] = dict(result.params)
+        params["limit"] = limit
 
         data = [m.model_dump(mode="json") for m in encontrados]
-        return IBGEResult(data=data, endpoint=result.endpoint, params=params)
+        return IBGEResult(data=data, endpoint=result.endpoint, params=params, raw=result.raw)
+
+    async def obter_distritos_municipio(self, codigo: str) -> IBGEResult:
+        """Lista os distritos de um município pelo código IBGE."""
+        municipio_id = _validar_codigo_municipio(codigo)
+        return await self._client.get_distritos_by_municipio(municipio_id)

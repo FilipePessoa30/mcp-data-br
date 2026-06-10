@@ -20,6 +20,7 @@ EXPECTED_TOOLS = {
     "listar_municipios",
     "obter_municipio",
     "buscar_municipios_por_nome",
+    "obter_distritos_municipio",
     "listar_agregados",
     "obter_metadados_agregado",
     "consultar_dados_agregado",
@@ -56,11 +57,11 @@ async def test_envelope_de_sucesso_contem_metadata_e_data():
 
 @respx.mock
 async def test_envelope_de_erro_contem_metadata_e_error():
-    respx.get(f"{LOCALIDADES_BASE_URL}/municipios/0000000").mock(
+    respx.get(f"{LOCALIDADES_BASE_URL}/municipios/9999999").mock(
         return_value=httpx.Response(404, json={"detail": "not found"})
     )
 
-    _, structured = await mcp.call_tool("obter_municipio", {"codigo": "0000000"})
+    _, structured = await mcp.call_tool("obter_municipio", {"codigo": "9999999"})
 
     assert "error" in structured
     assert "data" not in structured

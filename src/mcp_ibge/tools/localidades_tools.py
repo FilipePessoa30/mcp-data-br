@@ -114,3 +114,17 @@ def register(mcp: FastMCP) -> None:
             endpoint=endpoint,
             params=params,
         )
+
+    @mcp.tool()
+    async def obter_distritos_municipio(
+        codigo: Annotated[
+            str,
+            Field(description='Código IBGE do município com 7 dígitos (ex.: "3550308" = SP).'),
+        ],
+    ) -> dict[str, Any]:
+        """Lista os distritos de um município pelo código IBGE."""
+        return await run_tool(
+            _service.obter_distritos_municipio(codigo),
+            endpoint=f"{base_url}/municipios/{codigo}/distritos",
+            params={"municipio_id": codigo},
+        )

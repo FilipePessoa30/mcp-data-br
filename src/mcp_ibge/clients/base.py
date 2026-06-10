@@ -30,15 +30,20 @@ class IBGEResult:
     """Resultado de uma chamada a uma API do IBGE, com dados para rastreabilidade.
 
     Attributes:
-        data: Corpo da resposta já decodificado (lista ou dicionário JSON).
+        data: Corpo da resposta já decodificado (lista ou dicionário JSON),
+            possivelmente filtrado/transformado pelo client ou service.
         endpoint: URL completa do endpoint consultado (sem query string).
         params: Parâmetros relevantes da consulta, usados nos metadados de
             rastreabilidade da resposta da tool.
+        raw: Corpo da resposta bruta da API, antes de qualquer filtro local
+            (ex.: lista completa de municípios antes da busca por nome).
+            `None` quando `data` já corresponde à resposta bruta.
     """
 
     data: Any
     endpoint: str
     params: dict[str, Any] = field(default_factory=dict)
+    raw: Any = None
 
 
 def _cache_key(url: str, params: dict[str, Any] | None) -> tuple[str, tuple[Any, ...]]:

@@ -95,6 +95,7 @@ uv run mcp-ibge
 | `listar_municipios` | Lista municípios, opcionalmente filtrados por UF. |
 | `obter_municipio` | Detalhes de um município pelo código IBGE (7 dígitos). |
 | `buscar_municipios_por_nome` | Busca municípios por nome (ignora acentos/maiúsculas) — útil para descobrir o código IBGE. |
+| `obter_distritos_municipio` | Lista os distritos de um município pelo código IBGE. |
 
 ### Agregados / SIDRA
 
