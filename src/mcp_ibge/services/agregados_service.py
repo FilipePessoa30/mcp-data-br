@@ -40,7 +40,7 @@ class AgregadosService:
         texto: str | None = None,
     ) -> IBGEResult:
         """Lista agregados do SIDRA, com filtro textual local opcional pelo nome."""
-        result = await self._client.listar_agregados(pesquisa=pesquisa, assunto=assunto)
+        result = await self._client.list_agregados(pesquisa=pesquisa, assunto=assunto)
         data = result.data
 
         if texto:
@@ -64,7 +64,7 @@ class AgregadosService:
 
     async def obter_metadados(self, agregado_id: int) -> IBGEResult:
         """Obtém os metadados completos de um agregado."""
-        return await self._client.obter_metadados(agregado_id)
+        return await self._client.get_agregado_metadata(str(agregado_id))
 
     async def consultar_dados(
         self,
@@ -75,12 +75,12 @@ class AgregadosService:
         classificacoes: str | None = None,
     ) -> IBGEResult:
         """Consulta valores de um agregado, resolvendo aliases de localidade."""
-        return await self._client.consultar_dados(
-            agregado_id,
+        return await self._client.query_agregado(
+            str(agregado_id),
             variaveis=variaveis,
-            periodos=periodos,
             localidades=_resolver_localidades(localidades),
-            classificacoes=classificacoes,
+            periodos=periodos,
+            classificacao=classificacoes,
         )
 
     async def obter_populacao_municipio(self, codigo_municipio: str) -> IBGEResult:
@@ -89,8 +89,8 @@ class AgregadosService:
         Usa o agregado 6579 (Estimativas de população) do SIDRA, variável
         9324, para o período mais recente disponível.
         """
-        result = await self._client.consultar_dados(
-            AGREGADO_POPULACAO_ESTIMADA,
+        result = await self._client.query_agregado(
+            str(AGREGADO_POPULACAO_ESTIMADA),
             variaveis=str(VARIAVEL_POPULACAO_ESTIMADA),
             periodos="-1",
             localidades=f"N6[{codigo_municipio}]",
