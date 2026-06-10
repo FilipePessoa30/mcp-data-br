@@ -18,9 +18,10 @@ EXPECTED_TOOLS = {
     "listar_estados",
     "obter_estado",
     "listar_municipios",
-    "obter_municipio",
-    "buscar_municipios_por_nome",
-    "obter_distritos_municipio",
+    "buscar_municipio",
+    "obter_codigo_municipio",
+    "obter_municipio_por_codigo",
+    "listar_distritos",
     "listar_agregados",
     "obter_metadados_agregado",
     "consultar_dados_agregado",
@@ -61,7 +62,7 @@ async def test_envelope_de_erro_contem_metadata_e_error():
         return_value=httpx.Response(404, json={"detail": "not found"})
     )
 
-    _, structured = await mcp.call_tool("obter_municipio", {"codigo": "9999999"})
+    _, structured = await mcp.call_tool("obter_municipio_por_codigo", {"codigo_ibge": 9999999})
 
     assert "error" in structured
     assert "data" not in structured

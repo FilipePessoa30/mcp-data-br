@@ -90,12 +90,13 @@ uv run mcp-ibge
 | Tool | Descrição |
 | --- | --- |
 | `listar_regioes` | Lista as 5 grandes regiões do Brasil. |
-| `listar_estados` | Lista os 26 estados + DF, com filtro opcional por região. |
-| `obter_estado` | Detalhes de um estado por sigla (`SP`) ou ID IBGE (`35`). |
-| `listar_municipios` | Lista municípios, opcionalmente filtrados por UF. |
-| `obter_municipio` | Detalhes de um município pelo código IBGE (7 dígitos). |
-| `buscar_municipios_por_nome` | Busca municípios por nome (ignora acentos/maiúsculas) — útil para descobrir o código IBGE. |
-| `obter_distritos_municipio` | Lista os distritos de um município pelo código IBGE. |
+| `listar_estados` | Lista os 26 estados + DF, ordenados por nome. |
+| `obter_estado` | Detalhes de um estado por sigla (`SP`) ou código IBGE (`35`). |
+| `listar_municipios` | Lista os municípios de uma UF, com UF e região resolvidas. |
+| `buscar_municipio` | Busca fuzzy de municípios por nome (ignora acentos/maiúsculas); retorna `warnings` se ambíguo. |
+| `obter_codigo_municipio` | Obtém o código IBGE (7 dígitos) de um município pelo nome e UF. |
+| `obter_municipio_por_codigo` | Detalhes de um município pelo código IBGE, com UF e região. |
+| `listar_distritos` | Lista os distritos de um município pelo código IBGE. |
 
 ### Agregados / SIDRA
 
@@ -121,26 +122,24 @@ chamadas.
 
 ```jsonc
 // Chamada
-buscar_municipios_por_nome(nome="Florianópolis")
+obter_codigo_municipio(nome="Florianópolis", uf="SC")
 
 // Resposta (resumida)
 {
   "metadata": {
     "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
-    "source_url": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios",
-    "retrieved_at": "2026-06-10T12:00:00+00:00",
-    "endpoint": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios",
-    "params": {"nome": "Florianópolis", "limit": 20}
+    "source_url": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/SC/municipios",
+    "retrieved_at": "2026-06-10T12:00:00Z",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/SC/municipios",
+    "params": {"nome": "Florianópolis", "uf": "SC", "limite": 5}
   },
-  "data": [
-    {
-      "id": 4205407,
-      "nome": "Florianópolis",
-      "microrregiao": { "...": "..." }
-    }
-  ]
+  "data": 4205407
 }
 ```
+
+Se o nome buscado for ambíguo (ex.: `buscar_municipio(nome="São José")`, sem
+`uf`), a resposta inclui um campo `warnings` com a lista de candidatos
+encontrados, pedindo para refinar a busca.
 
 **2. População estimada de um município**
 
@@ -153,7 +152,7 @@ obter_populacao_municipio(codigo_municipio="4205407")
   "metadata": {
     "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
     "source_url": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324",
-    "retrieved_at": "2026-06-10T12:00:01+00:00",
+    "retrieved_at": "2026-06-10T12:00:01Z",
     "endpoint": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324",
     "params": {"codigo_municipio": "4205407", "localidades": "N6[4205407]"}
   },
@@ -201,7 +200,7 @@ O bloco `metadata` é sempre:
 {
   "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
   "source_url": "https://servicodados.ibge.gov.br/...",
-  "retrieved_at": "2026-06-10T12:00:00+00:00",
+  "retrieved_at": "2026-06-10T12:00:00Z",
   "endpoint": "https://servicodados.ibge.gov.br/...",
   "params": { "...": "parâmetros usados na consulta" }
 }
@@ -256,7 +255,7 @@ ajustando `--directory` para o caminho absoluto do projeto:
 }
 ```
 
-Reinicie o Claude Desktop. As tools `listar_estados`, `obter_municipio`,
+Reinicie o Claude Desktop. As tools `listar_estados`, `obter_municipio_por_codigo`,
 `consultar_dados_agregado` etc. ficarão disponíveis nas conversas.
 
 ### Cursor

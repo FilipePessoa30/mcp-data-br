@@ -14,10 +14,10 @@ ou para chamadas diretas via `mcp.call_tool`.
 { "name": "listar_regioes", "arguments": {} }
 ```
 
-### Listar estados de uma região
+### Listar todos os estados (ordenados por nome)
 
 ```json
-{ "name": "listar_estados", "arguments": { "regiao": "NE" } }
+{ "name": "listar_estados", "arguments": {} }
 ```
 
 ### Detalhes de um estado
@@ -32,25 +32,35 @@ ou para chamadas diretas via `mcp.call_tool`.
 { "name": "listar_municipios", "arguments": { "uf": "SP" } }
 ```
 
-### Detalhes de um município pelo código IBGE
-
-```json
-{ "name": "obter_municipio", "arguments": { "codigo": "3550308" } }
-```
-
-### Buscar municípios pelo nome (ignora acentos/caixa)
+### Buscar municípios pelo nome (ignora acentos/caixa, fuzzy)
 
 ```json
 {
-  "name": "buscar_municipios_por_nome",
-  "arguments": { "nome": "sao jose", "uf": "SP", "limit": 5 }
+  "name": "buscar_municipio",
+  "arguments": { "nome": "sao jose", "uf": "SP", "limite": 5 }
 }
+```
+
+> Sem `uf`, a busca considera todos os municípios do Brasil. Se houver mais
+> de um candidato, a resposta inclui um campo `warnings` listando os
+> candidatos encontrados.
+
+### Obter o código IBGE de um município pelo nome e UF
+
+```json
+{ "name": "obter_codigo_municipio", "arguments": { "nome": "Florianópolis", "uf": "SC" } }
+```
+
+### Detalhes de um município pelo código IBGE
+
+```json
+{ "name": "obter_municipio_por_codigo", "arguments": { "codigo_ibge": 3550308 } }
 ```
 
 ### Listar os distritos de um município
 
 ```json
-{ "name": "obter_distritos_municipio", "arguments": { "codigo": "3550308" } }
+{ "name": "listar_distritos", "arguments": { "codigo_municipio": 3550308 } }
 ```
 
 ## Agregados / SIDRA

@@ -26,7 +26,7 @@ do resultado, `data` (sucesso) ou `error` (falha).
   "metadata": {
     "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
     "source_url": "https://servicodados.ibge.gov.br/api/v1/localidades/regioes",
-    "retrieved_at": "2026-06-10T12:00:00+00:00",
+    "retrieved_at": "2026-06-10T12:00:00Z",
     "endpoint": "https://servicodados.ibge.gov.br/api/v1/localidades/regioes",
     "params": {}
   },
@@ -43,9 +43,9 @@ do resultado, `data` (sucesso) ou `error` (falha).
   "metadata": {
     "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
     "source_url": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/0000000",
-    "retrieved_at": "2026-06-10T12:00:00+00:00",
+    "retrieved_at": "2026-06-10T12:00:00Z",
     "endpoint": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/0000000",
-    "params": { "codigo": "0000000" }
+    "params": { "municipio_id": 0 }
   },
   "error": "Erro HTTP 404 ao consultar https://servicodados.ibge.gov.br/api/v1/localidades/municipios/0000000"
 }
@@ -57,7 +57,7 @@ do resultado, `data` (sucesso) ou `error` (falha).
 | --- | --- |
 | `source_name` | Nome da fonte oficial dos dados (configurável via `MCP_IBGE_SOURCE_NAME`). |
 | `source_url` | URL efetivamente consultada para obter os dados/erro. |
-| `retrieved_at` | Timestamp ISO 8601 (UTC) do momento da consulta. |
+| `retrieved_at` | Timestamp ISO 8601 (UTC, sufixo `Z`) do momento da consulta. |
 | `endpoint` | URL do endpoint da API do IBGE utilizado. |
 | `params` | Parâmetros usados na consulta (após resolução de aliases, filtros, etc.). |
 
@@ -65,6 +65,15 @@ Esse formato garante que qualquer dado retornado por uma tool possa ser
 **rastreado até a fonte oficial**, com data/hora da consulta e os parâmetros
 exatos utilizados — importante para auditoria e para o usuário verificar a
 informação na fonte original.
+
+### Campo opcional `warnings`
+
+As tools de Localidades que envolvem busca aproximada (ex.:
+`buscar_municipio`, `obter_codigo_municipio`) podem incluir um campo adicional
+`warnings` (lista de strings) na resposta de sucesso, sinalizando ambiguidades
+— por exemplo, quando mais de um município corresponde ao nome buscado. Nesse
+caso, `data` traz os candidatos encontrados e o aviso sugere refinar a busca
+(ex.: informando `uf`).
 
 ## Cache
 

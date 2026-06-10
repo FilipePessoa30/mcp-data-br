@@ -13,14 +13,14 @@ src/mcp_ibge/
 │   ├── localidades.py    # LocalidadesClient (regiões, estados, municípios)
 │   └── agregados.py      # AgregadosClient (lista, metadados, dados do SIDRA)
 ├── schemas/              # Modelos Pydantic: validação e envelope de resposta
-│   ├── common.py          # SourceMetadata, ToolResponse/ToolErrorResponse, build_response
-│   ├── localidades.py     # Regiao, Estado, Municipio
+│   ├── common.py          # SourceMetadata, TypedToolResult, ToolResponse/ToolErrorResponse, build_response
+│   ├── localidades.py     # Region, State, Municipality, District + conversores *_from_raw
 │   └── agregados.py       # AgregadoResumo, PesquisaAgregados, Variavel, MetadadosAgregado
 ├── services/             # Regras de negócio: validação, filtros, aliases, indicadores
-│   ├── localidades_service.py
+│   ├── localidades_service.py  # retorna TypedToolResult[T] (data/metadata/warnings/errors)
 │   └── agregados_service.py
 ├── tools/                # Camada MCP: expõe funções como `@mcp.tool()`
-│   ├── __init__.py        # `run_tool()`: converte IBGEResult/erros no envelope padrão
+│   ├── __init__.py        # `run_tool()` (IBGEResult) e `run_typed_tool()` (TypedToolResult) -> envelope padrão
 │   ├── localidades_tools.py
 │   └── agregados_tools.py
 └── utils/
@@ -33,17 +33,22 @@ src/mcp_ibge/
 
 1. Um cliente MCP chama uma tool (ex.: `obter_populacao_municipio`).
 2. A tool (em `tools/`) delega para o `service` correspondente e envolve o
-   resultado com `run_tool()`, que monta o envelope `{"metadata": ..., "data"
-   ou "error": ...}`.
+   resultado com `run_tool()` ou `run_typed_tool()`, que montam o envelope
+   `{"metadata": ..., "data" ou "error": ...}` (opcionalmente com `"warnings"`).
 3. O `service` aplica regras de negócio (filtros, validação com Pydantic,
-   resolução de aliases) e delega ao `client`.
+   resolução de aliases) e delega ao `client`. As tools de Localidades
+   retornam `TypedToolResult[T]` (`ok`, `data`, `metadata`, `warnings`,
+   `errors`), convertido pelo `run_typed_tool()`.
 4. O `client` (em `clients/`) monta a URL e os parâmetros, consulta o cache
    (`utils/cache.py`) e, em caso de *miss*, faz a requisição HTTP via
    `AsyncIBGEClient.get_json`.
 5. Erros de rede/HTTP são convertidos em subclasses de `IBGEClientError`
    (`IBGENotFoundError`, `IBGEValidationError`, `IBGERateLimitError`,
-   `IBGEServerError`) por `AsyncIBGEClient` e tratados por `run_tool()`, que
-   gera um envelope de erro sem derrubar o servidor.
+   `IBGEServerError`) por `AsyncIBGEClient`. Em `agregados_service`, são
+   tratados por `run_tool()`; em `localidades_service`, são capturados e
+   convertidos em `TypedToolResult(ok=False, errors=[...])`, que
+   `run_typed_tool()` transforma no envelope de erro — sem derrubar o
+   servidor em ambos os casos.
 
 ## Por que essa separação
 

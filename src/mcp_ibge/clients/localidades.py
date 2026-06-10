@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..config import get_settings
 from ..utils.errors import IBGEValidationError
 from ..utils.normalization import normalize_text
 from .base import AsyncIBGEClient, IBGEResult
@@ -65,7 +66,7 @@ def validar_uf(uf_or_id: str) -> str:
 
     raise IBGEValidationError(
         f'UF inválida: "{uf_or_id}". Use a sigla (ex.: "RJ") ou o código IBGE (ex.: "33").',
-        url=f"{LOCALIDADES_PATH}/estados/{uf_or_id}",
+        url=f"{get_settings().api_base_url}{LOCALIDADES_PATH}/estados/{uf_or_id}",
         status_code=422,
     )
 

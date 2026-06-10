@@ -2,6 +2,9 @@
 
 Todas as tools retornam um envelope JSON com `metadata` e (`data` ou
 `error`) — veja [data_sources.md](data_sources.md) para o formato completo.
+As tools de Localidades também podem incluir um campo opcional `warnings`
+(lista de strings) quando o resultado é ambíguo (ex.: mais de um município
+corresponde ao nome buscado).
 
 ## Localidades
 
@@ -15,11 +18,9 @@ Sul, Centro-Oeste).
 
 ### `listar_estados`
 
-Lista os 26 estados e o Distrito Federal.
+Lista os 26 estados e o Distrito Federal, ordenados por nome.
 
-- **Argumentos**:
-  - `regiao` (opcional): sigla (`"N"`, `"NE"`, `"CO"`, `"SE"`, `"S"`) ou ID
-    numérico da região. Filtra os estados pertencentes a ela.
+- **Argumentos**: nenhum.
 - **Endpoint**: `GET /localidades/estados`.
 
 ### `obter_estado`
@@ -27,47 +28,62 @@ Lista os 26 estados e o Distrito Federal.
 Detalhes de um estado (UF).
 
 - **Argumentos**:
-  - `uf` (obrigatório): sigla (ex.: `"SP"`) ou ID IBGE (ex.: `"35"`).
+  - `uf` (obrigatório): sigla (ex.: `"SP"`) ou código IBGE (ex.: `"35"`).
 - **Endpoint**: `GET /localidades/estados/{uf}`.
 
 ### `listar_municipios`
 
-Lista municípios brasileiros.
+Lista os municípios de uma UF, com UF e região resolvidas em cada item
+(`uf_sigla`, `uf_nome`, `regiao_nome`).
 
 - **Argumentos**:
-  - `uf` (opcional): sigla ou ID do estado. Sem ele, retorna todos os ~5570
-    municípios do Brasil.
+  - `uf` (obrigatório): sigla (ex.: `"SP"`) ou código IBGE da UF.
+- **Endpoint**: `GET /localidades/estados/{uf}/municipios`.
+
+### `buscar_municipio`
+
+Busca municípios por nome com correspondência aproximada (fuzzy), ignorando
+acentos e maiúsculas/minúsculas. Tenta, nesta ordem: correspondência exata,
+"contém" e, por fim, similaridade textual. Sem `uf`, busca em todo o Brasil.
+
+- **Argumentos**:
+  - `nome` (obrigatório): nome (ou parte do nome) do município.
+  - `uf` (opcional): restringe a busca a uma UF (sigla ou código).
+  - `limite` (opcional, padrão `10`, entre 1 e 50): número máximo de
+    candidatos retornados.
 - **Endpoint**: `GET /localidades/estados/{uf}/municipios` ou
-  `GET /localidades/municipios`.
+  `GET /localidades/municipios`, com filtro aplicado localmente.
+- Quando há mais de um candidato, a resposta inclui `warnings` sugerindo
+  refinar a busca (ex.: informar `uf`).
 
-### `obter_municipio`
+### `obter_codigo_municipio`
 
-Detalhes completos de um município pelo código IBGE.
-
-- **Argumentos**:
-  - `codigo` (obrigatório): código IBGE com 7 dígitos (ex.: `"3550308"`).
-- **Endpoint**: `GET /localidades/municipios/{codigo}`.
-
-### `buscar_municipios_por_nome`
-
-Busca municípios cujo nome contenha o termo informado, ignorando acentos e
-maiúsculas/minúsculas. Útil para descobrir o código IBGE a partir do nome.
+Obtém o código IBGE de 7 dígitos de um município pelo nome e UF.
 
 - **Argumentos**:
-  - `nome` (obrigatório): termo de busca (ex.: `"sao jose"`).
-  - `uf` (opcional): restringe a busca a uma UF.
-  - `limit` (opcional, padrão `20`, entre 1 e 200): número máximo de
-    resultados.
+  - `nome` (obrigatório): nome do município.
+  - `uf` (obrigatório): sigla ou código IBGE da UF.
 - **Endpoint**: mesmo de `listar_municipios`, com filtro aplicado localmente.
+- Retorna erro se nenhum município corresponder ou se o nome for ambíguo
+  dentro da UF informada.
 
-### `obter_distritos_municipio`
+### `obter_municipio_por_codigo`
+
+Detalhes de um município pelo código IBGE, com UF e região resolvidas
+(`uf_sigla`, `uf_nome`, `regiao_nome`).
+
+- **Argumentos**:
+  - `codigo_ibge` (obrigatório): código IBGE com 7 dígitos (ex.: `3550308`).
+- **Endpoint**: `GET /localidades/municipios/{codigo_ibge}`.
+
+### `listar_distritos`
 
 Lista os distritos de um município.
 
 - **Argumentos**:
-  - `codigo` (obrigatório): código IBGE do município com 7 dígitos (ex.:
-    `"3550308"`).
-- **Endpoint**: `GET /localidades/municipios/{codigo}/distritos`.
+  - `codigo_municipio` (obrigatório): código IBGE do município com 7 dígitos
+    (ex.: `3550308`).
+- **Endpoint**: `GET /localidades/municipios/{codigo_municipio}/distritos`.
 
 ## Agregados / SIDRA
 
