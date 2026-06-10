@@ -42,8 +42,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-username/mcp-ibge"
-Issues = "https://github.com/your-username/mcp-ibge/issues"
+Homepage = "https://github.com/FilipePessoa30/mcp-ibge"
+Issues = "https://github.com/FilipePessoa30/mcp-ibge/issues"
 
 [project.scripts]
 mcp-ibge = "mcp_ibge.server:main"

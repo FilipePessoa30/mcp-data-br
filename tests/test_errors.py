@@ -95,3 +95,17 @@ async def test_erro_de_conexao_levanta_client_error():
     client = AsyncIBGEClient()
     with pytest.raises(IBGEClientError):
         await client.get_json("/teste")
+
+
+@respx.mock
+async def test_resposta_acima_do_limite_levanta_server_error(monkeypatch):
+    settings = get_settings().model_copy(update={"max_response_size_bytes": 10})
+    monkeypatch.setattr("mcp_ibge.clients.base.get_settings", lambda: settings)
+
+    respx.get(f"{BASE_URL}/teste").mock(return_value=httpx.Response(200, json={"dados": "x" * 100}))
+
+    client = AsyncIBGEClient()
+    with pytest.raises(IBGEServerError) as exc_info:
+        await client.get_json("/teste")
+
+    assert exc_info.value.status_code is None

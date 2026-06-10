@@ -27,6 +27,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..utils.errors import IBGENotFoundError, IBGEValidationError
+from ..utils.validation import validate_agregado_id, validate_niveis, validate_periodos
 from .base import AsyncIBGEClient, IBGEResult
 
 AGREGADOS_PATH = "/v3/agregados"
@@ -78,7 +79,7 @@ class AgregadosClient(AsyncIBGEClient):
 
     async def get_agregado_metadata(self, agregado_id: str) -> IBGEResult:
         """`GET /agregados/{agregado_id}/metadados` — variáveis, períodos e níveis territoriais."""
-        agregado_id = _validar_obrigatorio(agregado_id, "agregado_id", url=self.base_url)
+        agregado_id = validate_agregado_id(agregado_id, url=self.base_url)
         path = f"/{agregado_id}/metadados"
         url = f"{self.base_url}{path}"
 
@@ -90,8 +91,8 @@ class AgregadosClient(AsyncIBGEClient):
 
     async def get_agregado_localidades(self, agregado_id: str, niveis: str) -> IBGEResult:
         """`GET /agregados/{agregado_id}/localidades/{niveis}` — localidades disponíveis."""
-        agregado_id = _validar_obrigatorio(agregado_id, "agregado_id", url=self.base_url)
-        niveis = _validar_obrigatorio(niveis, "niveis", url=self.base_url)
+        agregado_id = validate_agregado_id(agregado_id, url=self.base_url)
+        niveis = validate_niveis(niveis, url=self.base_url)
         path = f"/{agregado_id}/localidades/{niveis}"
         url = f"{self.base_url}{path}"
 
@@ -110,7 +111,7 @@ class AgregadosClient(AsyncIBGEClient):
 
     async def get_agregado_periodos(self, agregado_id: str) -> IBGEResult:
         """`GET /agregados/{agregado_id}/periodos` — períodos disponíveis."""
-        agregado_id = _validar_obrigatorio(agregado_id, "agregado_id", url=self.base_url)
+        agregado_id = validate_agregado_id(agregado_id, url=self.base_url)
         path = f"/{agregado_id}/periodos"
         url = f"{self.base_url}{path}"
 
@@ -122,7 +123,7 @@ class AgregadosClient(AsyncIBGEClient):
 
     async def get_agregado_variaveis(self, agregado_id: str) -> IBGEResult:
         """`GET /agregados/{agregado_id}/variaveis` — variáveis disponíveis."""
-        agregado_id = _validar_obrigatorio(agregado_id, "agregado_id", url=self.base_url)
+        agregado_id = validate_agregado_id(agregado_id, url=self.base_url)
         path = f"/{agregado_id}/variaveis"
         url = f"{self.base_url}{path}"
 
@@ -142,10 +143,10 @@ class AgregadosClient(AsyncIBGEClient):
         view: str | None = None,
     ) -> IBGEResult:
         """`GET /agregados/{agregado_id}/periodos/{periodos}/variaveis/{variaveis}`."""
-        agregado_id = _validar_obrigatorio(agregado_id, "agregado_id", url=self.base_url)
+        agregado_id = validate_agregado_id(agregado_id, url=self.base_url)
         variaveis = _validar_obrigatorio(variaveis, "variaveis", url=self.base_url)
         localidades = _validar_obrigatorio(localidades, "localidades", url=self.base_url)
-        periodos = _validar_obrigatorio(periodos, "periodos", url=self.base_url)
+        periodos = validate_periodos(periodos, url=self.base_url)
 
         path = f"/{agregado_id}/periodos/{periodos}/variaveis/{variaveis}"
         url = f"{self.base_url}{path}"

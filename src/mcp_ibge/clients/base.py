@@ -6,6 +6,7 @@ rede/HTTP para as exceções de `mcp_ibge.utils.errors`.
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 from typing import Any
@@ -103,11 +104,20 @@ class AsyncIBGEClient:
         logger.debug("GET %s params=%s", url, params)
         headers = {"User-Agent": settings.user_agent, "Accept": "application/json"}
 
+        max_size = settings.max_response_size_bytes
         try:
             async with httpx.AsyncClient(timeout=settings.timeout, headers=headers) as client:
-                response = await client.get(url, params=params)
-                response.raise_for_status()
-                data = response.json()
+                async with client.stream("GET", url, params=params) as response:
+                    response.raise_for_status()
+                    body = bytearray()
+                    async for chunk in response.aiter_bytes():
+                        body.extend(chunk)
+                        if len(body) > max_size:
+                            raise IBGEServerError(
+                                f"Resposta de {url} excede o limite de {max_size} bytes.",
+                                url=url,
+                            )
+                data = json.loads(body)
         except httpx.TimeoutException as exc:
             raise IBGEClientError(
                 f"Tempo limite excedido ({settings.timeout}s) ao consultar {url}", url=url
