@@ -32,6 +32,17 @@ antes de usar)
 
 14. [`consultar_populacao_municipio`](#14-consultar_populacao_municipio)
 
+**SIDRA Query Builder** (novo — descoberta, sugestão e validação de
+consultas, sem uso de LLM no servidor)
+
+15. [`buscar_tabelas_sidra`](#15-buscar_tabelas_sidra)
+16. [`explicar_tabela_sidra`](#16-explicar_tabela_sidra)
+17. [`listar_variaveis_tabela_sidra`](#17-listar_variaveis_tabela_sidra)
+18. [`listar_classificacoes_tabela_sidra`](#18-listar_classificacoes_tabela_sidra)
+19. [`sugerir_consulta_sidra`](#19-sugerir_consulta_sidra)
+20. [`validar_consulta_sidra`](#20-validar_consulta_sidra)
+21. [`executar_consulta_sidra_validada`](#21-executar_consulta_sidra_validada)
+
 ## Formato da resposta
 
 Toda tool retorna um envelope JSON com `metadata` e (`data` ou `error`):
@@ -1110,9 +1121,584 @@ Mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools).
 
 ---
 
+## SIDRA Query Builder
+
+A API de Agregados/SIDRA exige parâmetros difíceis de descobrir
+(`agregado_id`, `variaveis`, `periodos`, `localidades`, `classificacao`,
+`view`). As 7 tools abaixo formam uma camada de **descoberta, sugestão e
+validação** sobre as tools de [Agregados / SIDRA](#agregados--sidra)
+acima — ajudando um agente a montar uma consulta correta para
+[`consultar_agregado`](#13-consultar_agregado) sem precisar adivinhar IDs.
+
+> **Nenhuma etapa usa modelos de linguagem.** `sugerir_consulta_sidra` é uma
+> heurística simples: extrai palavras-chave da pergunta (remoção de acentos,
+> caixa e stopwords em português) e pontua agregados/variáveis pela
+> ocorrência dessas palavras no `nome` retornado pela API, mais um pequeno
+> dicionário de palavras-chave → nível territorial. O resultado é sempre uma
+> **proposta** (`sugerir_consulta_sidra` nunca executa uma consulta) e
+> sempre inclui `warnings` explicando a heurística e, quando houver,
+> agregados alternativos.
+
+Fluxo recomendado:
+
+1. **Descobrir o agregado** — [`buscar_tabelas_sidra`](#15-buscar_tabelas_sidra)
+   (por tema) ou [`sugerir_consulta_sidra`](#19-sugerir_consulta_sidra) (por
+   pergunta em linguagem natural, retorna uma proposta completa).
+2. **Entender o agregado** — [`explicar_tabela_sidra`](#16-explicar_tabela_sidra),
+   [`listar_variaveis_tabela_sidra`](#17-listar_variaveis_tabela_sidra) e
+   [`listar_classificacoes_tabela_sidra`](#18-listar_classificacoes_tabela_sidra).
+3. **Validar antes de gastar uma requisição de dados** —
+   [`validar_consulta_sidra`](#20-validar_consulta_sidra) verifica os
+   parâmetros propostos contra os metadados reais do agregado.
+4. **Executar com segurança** —
+   [`executar_consulta_sidra_validada`](#21-executar_consulta_sidra_validada)
+   repete a validação do passo 3 e só chama
+   [`consultar_agregado`](#13-consultar_agregado) se ela passar.
+
+---
+
+### 15. `buscar_tabelas_sidra`
+
+**Descrição**: busca agregados (tabelas) do SIDRA relacionados a `tema`, por
+palavras-chave no `nome` de cada agregado retornado por
+[`listar_agregados`](#8-listar_agregados). Cada item retornado inclui `id`,
+`nome` e `pontuacao` (quantas palavras-chave de `tema` casaram com o nome),
+ordenados por `pontuacao` decrescente.
+
+**Parâmetros**:
+
+| Nome | Tipo | Obrigatório | Padrão | Descrição |
+| --- | --- | --- | --- | --- |
+| `tema` | `string` | sim | — | Tema/assunto de interesse (ex.: `"população"`, `"inflação"`). |
+| `limite` | `integer` | não | `10` | Número máximo de agregados retornados (`1`-`100`). |
+
+**Exemplo de chamada**:
+
+```python
+buscar_tabelas_sidra(tema="população dos municípios")
+```
+
+**Exemplo de resposta JSON**:
+
+```json
+{
+  "metadata": {
+    "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
+    "source_url": "https://servicodados.ibge.gov.br/api/v3/agregados",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/agregados",
+    "params": { "tema": "população dos municípios", "limite": 10 },
+    "retrieved_at": "2026-06-11T12:00:00.000000+00:00",
+    "license_note": null
+  },
+  "data": [
+    { "id": "6579", "nome": "População residente estimada", "pontuacao": 1 },
+    { "id": "9514", "nome": "População residente, por sexo, situação e grupos de idade", "pontuacao": 1 }
+  ]
+}
+```
+
+**Possíveis warnings**:
+
+- `Nenhum agregado encontrado para o tema "<tema>". Tente palavras-chave diferentes ou use \`listar_agregados\` para ver todos os agregados.`
+  — emitido quando nenhuma palavra-chave de `tema` casa com o nome de nenhum
+  agregado (`data: []`).
+
+**Erros comuns**:
+
+| Situação | Mensagem (`error`) |
+| --- | --- |
+| `limite` fora do intervalo `1`-`100` | `Parâmetro "limite" deve ser um inteiro entre 1 e 100.` |
+
+Mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools).
+
+**Fonte usada**: [IBGE Agregados (SIDRA) API](https://servicodados.ibge.gov.br/api/docs/agregados)
+— `GET /agregados` (mesmo endpoint de [`listar_agregados`](#8-listar_agregados),
+ranqueado localmente por palavras-chave).
+
+---
+
+### 16. `explicar_tabela_sidra`
+
+**Descrição**: explica um agregado do SIDRA, a partir dos metadados de
+[`obter_metadados_agregado`](#9-obter_metadados_agregado), já estruturados
+para descoberta de consultas: `id`, `nome`, `pesquisa`, `assunto`,
+`periodicidade` (`frequencia`, `inicio`, `fim`), `niveis_territoriais`
+(ex.: `["N1", "N3", "N6"]`), `variaveis` (`id`, `nome`, `unidade`),
+`classificacoes` (`id`, `nome`, `categorias`) e `limitacoes` — uma lista de
+frases em texto que resume o intervalo de períodos, os níveis territoriais
+suportados e se há classificações adicionais.
+
+**Parâmetros**:
+
+| Nome | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `agregado_id` | `string` | sim | ID do agregado do SIDRA (ex.: `"6579"` = "População residente estimada"). |
+
+**Exemplo de chamada**:
+
+```python
+explicar_tabela_sidra(agregado_id="6579")
+```
+
+**Exemplo de resposta JSON**:
+
+```json
+{
+  "metadata": {
+    "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
+    "source_url": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/metadados",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/metadados",
+    "params": { "agregado_id": "6579" },
+    "retrieved_at": "2026-06-11T12:00:00.000000+00:00",
+    "license_note": null
+  },
+  "data": {
+    "id": "6579",
+    "nome": "População residente estimada",
+    "pesquisa": "Estimativas de População",
+    "assunto": "População",
+    "periodicidade": { "frequencia": "anual", "inicio": 2001, "fim": 2024 },
+    "niveis_territoriais": ["N1", "N2", "N3", "N6"],
+    "variaveis": [
+      { "id": "9324", "nome": "População residente estimada", "unidade": "Pessoas" }
+    ],
+    "classificacoes": [],
+    "limitacoes": [
+      "Dados disponíveis de 2001 a 2024 (anual).",
+      "Níveis territoriais disponíveis: N1, N2, N3, N6.",
+      "Esta tabela não possui classificações adicionais (apenas variáveis)."
+    ]
+  }
+}
+```
+
+**Possíveis warnings**: nenhum.
+
+**Erros comuns**:
+
+| Situação | Mensagem (`error`) |
+| --- | --- |
+| `agregado_id` é uma string vazia/só espaços | `Parâmetro "agregado_id" não pode ser vazio.` |
+| `agregado_id` não corresponde a nenhum agregado existente | `Agregado "<agregado_id>" não encontrado.` |
+
+Mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools).
+
+**Fonte usada**: [IBGE Agregados (SIDRA) API](https://servicodados.ibge.gov.br/api/docs/agregados)
+— `GET /agregados/{agregado_id}/metadados` (mesmo endpoint de
+[`obter_metadados_agregado`](#9-obter_metadados_agregado), reestruturado).
+
+---
+
+### 17. `listar_variaveis_tabela_sidra`
+
+**Descrição**: lista as variáveis de um agregado, a partir dos metadados
+estruturados (`AgregadoMetadataParsed.variaveis`) — cada item com `id`,
+`nome` e `unidade`. Equivalente a
+[`listar_variaveis_agregado`](#10-listar_variaveis_agregado), mas obtido de
+`/metadados` em vez de `/variaveis`.
+
+**Parâmetros**:
+
+| Nome | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `agregado_id` | `string` | sim | ID do agregado do SIDRA (ex.: `"6579"` = "População residente estimada"). |
+
+**Exemplo de chamada**:
+
+```python
+listar_variaveis_tabela_sidra(agregado_id="6579")
+```
+
+**Exemplo de resposta JSON**:
+
+```json
+{
+  "metadata": {
+    "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
+    "source_url": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/metadados",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/metadados",
+    "params": { "agregado_id": "6579" },
+    "retrieved_at": "2026-06-11T12:00:00.000000+00:00",
+    "license_note": null
+  },
+  "data": [
+    { "id": "9324", "nome": "População residente estimada", "unidade": "Pessoas" }
+  ]
+}
+```
+
+**Possíveis warnings**: nenhum.
+
+**Erros comuns**: os mesmos de [`explicar_tabela_sidra`](#16-explicar_tabela_sidra)
+mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools).
+
+**Fonte usada**: [IBGE Agregados (SIDRA) API](https://servicodados.ibge.gov.br/api/docs/agregados)
+— `GET /agregados/{agregado_id}/metadados`.
+
+---
+
+### 18. `listar_classificacoes_tabela_sidra`
+
+**Descrição**: lista as classificações de um agregado, a partir dos
+metadados estruturados (`AgregadoMetadataParsed.classificacoes`) — cada item
+com `id`, `nome` e `categorias` (cada categoria com `id` e `nome`). Uma lista
+vazia indica que a tabela não possui classificações adicionais (apenas
+variáveis). Use `"<id_classificacao>[<id_categoria>]"` no parâmetro
+`classificacao` de [`validar_consulta_sidra`](#20-validar_consulta_sidra),
+[`executar_consulta_sidra_validada`](#21-executar_consulta_sidra_validada) ou
+[`consultar_agregado`](#13-consultar_agregado).
+
+**Parâmetros**:
+
+| Nome | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `agregado_id` | `string` | sim | ID do agregado do SIDRA (ex.: `"7060"` = "IPCA - Variação mensal"). |
+
+**Exemplo de chamada**:
+
+```python
+listar_classificacoes_tabela_sidra(agregado_id="7060")
+```
+
+**Exemplo de resposta JSON**:
+
+```json
+{
+  "metadata": {
+    "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
+    "source_url": "https://servicodados.ibge.gov.br/api/v3/agregados/7060/metadados",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/agregados/7060/metadados",
+    "params": { "agregado_id": "7060" },
+    "retrieved_at": "2026-06-11T12:00:00.000000+00:00",
+    "license_note": null
+  },
+  "data": [
+    {
+      "id": "315",
+      "nome": "Geral, grupo, subgrupo, item e subitem",
+      "categorias": [{ "id": "7169", "nome": "Índice geral" }]
+    }
+  ]
+}
+```
+
+**Possíveis warnings**: nenhum.
+
+**Erros comuns**: os mesmos de [`explicar_tabela_sidra`](#16-explicar_tabela_sidra)
+mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools).
+
+**Fonte usada**: [IBGE Agregados (SIDRA) API](https://servicodados.ibge.gov.br/api/docs/agregados)
+— `GET /agregados/{agregado_id}/metadados`.
+
+---
+
+### 19. `sugerir_consulta_sidra`
+
+**Descrição**: sugere uma consulta SIDRA (`agregado_id`, `variaveis`,
+`localidades`) para uma `pergunta` em linguagem natural — **sem executar
+nenhuma consulta**. Internamente: (1) lista os agregados disponíveis
+([`listar_agregados`](#8-listar_agregados)) e os ranqueia por palavras-chave
+extraídas de `pergunta`; (2) obtém os metadados do agregado com maior
+pontuação ([`explicar_tabela_sidra`](#16-explicar_tabela_sidra)); (3) sugere a
+variável cujo nome melhor pontua para as mesmas palavras-chave; (4) sugere o
+nível territorial (`localidades`) a partir de um pequeno dicionário de
+palavras-chave (ex.: "município"/"cidades" → `"N6[all]"`, "estado"/"UF" →
+`"N3[all]"`, "Brasil"/"nacional" → `"N1[all]"`, padrão `"N1[all]"`).
+`alternativas` traz até 5 outros agregados que também casaram com a pergunta.
+
+**Parâmetros**:
+
+| Nome | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `pergunta` | `string` | sim | Pergunta em linguagem natural (ex.: `"qual a população estimada dos municípios em 2024?"`). |
+
+**Exemplo de chamada**:
+
+```python
+sugerir_consulta_sidra(pergunta="qual a população estimada dos municípios em 2024?")
+```
+
+**Exemplo de resposta JSON**:
+
+```json
+{
+  "metadata": {
+    "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
+    "source_url": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/metadados",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/metadados",
+    "params": {
+      "pergunta": "qual a população estimada dos municípios em 2024?",
+      "agregado_id": "6579"
+    },
+    "retrieved_at": "2026-06-11T12:00:00.000000+00:00",
+    "license_note": null
+  },
+  "data": {
+    "agregado_id": "6579",
+    "agregado_nome": "População residente estimada",
+    "variaveis": "9324",
+    "variavel_nome": "População residente estimada",
+    "localidades": "N6[all]",
+    "periodos": "-1",
+    "classificacao": null,
+    "alternativas": [
+      { "id": "9514", "nome": "População residente, por sexo, situação e grupos de idade", "pontuacao": 1 }
+    ]
+  },
+  "warnings": [
+    "Sugestão gerada por busca de palavras-chave em metadados (sem uso de modelos de linguagem); revise os parâmetros antes de executar, com `validar_consulta_sidra` ou `explicar_tabela_sidra`.",
+    "Outros agregados também correspondem à pergunta: 9514 (População residente, por sexo, situação e grupos de idade)."
+  ]
+}
+```
+
+**Possíveis warnings**:
+
+- O aviso sobre a heurística sem LLM acima é **sempre** retornado em caso de
+  sucesso.
+- `Outros agregados também correspondem à pergunta: <id> (<nome>), ...` —
+  emitido quando mais de um agregado casa com `pergunta` (até 3 listados).
+- `O agregado "<agregado_id>" não possui variáveis informadas.` — emitido
+  quando o agregado escolhido não tem variáveis em seus metadados
+  (`variaveis` é retornado como `"all"` e `variavel_nome` como `null`).
+
+**Erros comuns**:
+
+| Situação | Mensagem (`error`) |
+| --- | --- |
+| Nenhuma palavra-chave de `pergunta` casa com o nome de nenhum agregado | `Não foi possível identificar um agregado para a pergunta "<pergunta>". Tente reformular com termos mais específicos (ex.: o nome de um indicador) ou use \`buscar_tabelas_sidra\`/\`listar_agregados\`.` |
+
+Mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools).
+
+**Fonte usada**: [IBGE Agregados (SIDRA) API](https://servicodados.ibge.gov.br/api/docs/agregados)
+— `GET /agregados` (ranqueamento) e `GET /agregados/{agregado_id}/metadados`
+(do agregado escolhido).
+
+---
+
+### 20. `validar_consulta_sidra`
+
+**Descrição**: valida `variaveis`, `localidades`, `periodos` e
+`classificacao` para um `agregado_id`, em duas etapas: (1) valida o
+**formato** de cada parâmetro com `mcp_ibge.utils.validators` (os mesmos
+validadores usados por [`consultar_agregado`](#13-consultar_agregado)); (2)
+obtém os metadados do agregado
+([`explicar_tabela_sidra`](#16-explicar_tabela_sidra)) e verifica se os
+valores informados **existem de fato** nesse agregado. `ok=false` (com
+`errors`) se o formato for inválido, os metadados não puderem ser obtidos, ou
+nenhuma variável/nível territorial válido for encontrado. Problemas que não
+impedem a consulta (variável/nível parcialmente inválido, período fora do
+intervalo conhecido) aparecem em `avisos` dentro de `data`, não em `errors`.
+
+**Parâmetros**:
+
+| Nome | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `agregado_id` | `string` | sim | ID do agregado do SIDRA (ex.: `"6579"`). |
+| `variaveis` | `string` | sim | ID de variável, lista separada por `\|` (ex.: `"93\|1000093"`) ou `"all"`. |
+| `localidades` | `string` | sim | Unidade territorial no formato `N<nivel>[<ids>]`, ex.: `"N1[all]"`, `"N3[all]"`, `"N6[3550308]"`. |
+| `periodos` | `string` | sim | Um ano (`"2021"`), intervalo (`"2010-2020"`), lista (`"2020\|2021\|2022"`) ou relativo (`"-1"`, `"-6"`). |
+| `classificacao` | `string \| null` | não | Formato `"<id_classificacao>[<id_categoria>,...]"` (ex.: `"315[7169]"`). |
+
+**Exemplo de chamada**:
+
+```python
+validar_consulta_sidra(
+    agregado_id="6579",
+    variaveis="9324",
+    localidades="N6[3550308]",
+    periodos="2024",
+)
+```
+
+**Exemplo de resposta JSON** (consulta válida):
+
+```json
+{
+  "metadata": {
+    "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
+    "source_url": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/metadados",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/metadados",
+    "params": {
+      "agregado_id": "6579",
+      "variaveis": "9324",
+      "localidades": "N6[3550308]",
+      "periodos": "2024"
+    },
+    "retrieved_at": "2026-06-11T12:00:00.000000+00:00",
+    "license_note": null
+  },
+  "data": {
+    "valido": true,
+    "agregado_id": "6579",
+    "variaveis_validas": ["9324"],
+    "variaveis_invalidas": [],
+    "niveis_territoriais": ["N6"],
+    "niveis_invalidos": [],
+    "classificacao_valida": null,
+    "erros": [],
+    "avisos": []
+  }
+}
+```
+
+**Exemplo de resposta JSON** (variável inexistente — `ok: false`):
+
+```json
+{
+  "data": {
+    "valido": false,
+    "agregado_id": "6579",
+    "variaveis_validas": [],
+    "variaveis_invalidas": ["99999"],
+    "niveis_territoriais": ["N6"],
+    "niveis_invalidos": [],
+    "classificacao_valida": null,
+    "erros": [
+      "Nenhuma das variáveis \"99999\" existe no agregado \"6579\". Use `listar_variaveis_tabela_sidra` para ver as variáveis disponíveis."
+    ],
+    "avisos": []
+  },
+  "errors": [
+    "Nenhuma das variáveis \"99999\" existe no agregado \"6579\". Use `listar_variaveis_tabela_sidra` para ver as variáveis disponíveis."
+  ]
+}
+```
+
+**Possíveis warnings** (em `data.avisos`, e também em `warnings` quando
+`valido=true`):
+
+- `Variável(is) "<ids>" não encontrada(s) no agregado "<agregado_id>" e será(ão) ignorada(s).`
+- `Nível(is) territorial(is) "<niveis>" não disponível(is) no agregado "<agregado_id>".`
+- `Período "<periodo>" está fora do intervalo informado pela API para o agregado <agregado_id> (<inicio>-<fim>).`
+
+**Erros comuns**:
+
+| Situação | Mensagem (`error`) |
+| --- | --- |
+| Formato de `agregado_id`/`variaveis`/`localidades`/`periodos` inválido | mensagens de `mcp_ibge.utils.validators` (mesmas de [`consultar_agregado`](#13-consultar_agregado)) |
+| `agregado_id` não corresponde a nenhum agregado existente | `Agregado "<agregado_id>" não encontrado.` |
+| Nenhuma variável de `variaveis` existe no agregado | `Nenhuma das variáveis "<variaveis>" existe no agregado "<agregado_id>". Use \`listar_variaveis_tabela_sidra\` para ver as variáveis disponíveis.` |
+| Nenhum nível territorial de `localidades` está disponível no agregado | `Nenhum dos níveis territoriais de "<localidades>" está disponível no agregado "<agregado_id>" (disponíveis: <niveis>).` |
+| `classificacao` com `id_classificacao`/`id_categoria` inexistente | `Classificação "<id>" não existe no agregado "<agregado_id>". Use \`listar_classificacoes_tabela_sidra\` para ver as classificações disponíveis.` ou `Categoria(s) "<ids>" não existe(m) na classificação "<id>" do agregado "<agregado_id>".` |
+
+Mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools).
+
+**Fonte usada**: [IBGE Agregados (SIDRA) API](https://servicodados.ibge.gov.br/api/docs/agregados)
+— `GET /agregados/{agregado_id}/metadados`. **Não consulta**
+`/agregados/{agregado_id}/periodos/.../variaveis/...` (a validação é local,
+contra os metadados já obtidos).
+
+---
+
+### 21. `executar_consulta_sidra_validada`
+
+**Descrição**: valida a consulta contra os metadados do agregado — mesma
+lógica de [`validar_consulta_sidra`](#20-validar_consulta_sidra) — e **só a
+executa** ([`consultar_agregado`](#13-consultar_agregado)) se `data.valido`
+for `true`. Se a validação falhar, retorna `ok=false` com os mesmos
+`errors`/`warnings` de `validar_consulta_sidra` e **nenhuma requisição
+adicional é feita** (a tool não chama `/periodos/.../variaveis/...` nesse
+caso). Em caso de sucesso, `data` é a mesma lista "achatada" de
+[`AgregadoQueryResult`](#13-consultar_agregado), e `warnings` combina os
+avisos da validação com os avisos da consulta.
+
+**Parâmetros**:
+
+| Nome | Tipo | Obrigatório | Padrão | Descrição |
+| --- | --- | --- | --- | --- |
+| `agregado_id` | `string` | sim | — | ID do agregado do SIDRA (ex.: `"6579"`). |
+| `variaveis` | `string` | sim | — | ID de variável, lista separada por `\|` (ex.: `"93\|1000093"`) ou `"all"`. |
+| `localidades` | `string` | sim | — | Unidade territorial no formato `N<nivel>[<ids>]`, ex.: `"N1[all]"`, `"N6[3550308]"`. |
+| `periodos` | `string` | não | `"-6"` | Um ano, intervalo, lista ou relativo (`"-1"` = último período disponível). |
+| `classificacao` | `string \| null` | não | `null` | Formato `"<id_classificacao>[<id_categoria>,...]"`. |
+| `view` | `string \| null` | não | `null` | Formato alternativo de resposta da API (ex.: `"flat"`). |
+
+**Exemplo de chamada**:
+
+```python
+executar_consulta_sidra_validada(
+    agregado_id="6579",
+    variaveis="9324",
+    localidades="N6[3550308]",
+    periodos="2024",
+)
+```
+
+**Exemplo de resposta JSON** (válida — executa e retorna os dados):
+
+```json
+{
+  "metadata": {
+    "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
+    "source_url": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/2024/variaveis/9324",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/2024/variaveis/9324",
+    "params": {
+      "agregado_id": "6579",
+      "variaveis": "9324",
+      "localidades": "N6[3550308]",
+      "periodos": "2024"
+    },
+    "retrieved_at": "2026-06-11T12:00:00.000000+00:00",
+    "license_note": null
+  },
+  "data": [
+    {
+      "agregado_id": "6579",
+      "variavel_id": "9324",
+      "localidade_id": "3550308",
+      "localidade_nome": "São Paulo",
+      "periodo": "2024",
+      "valor": 11451245.0,
+      "unidade": "Pessoas",
+      "raw": { "...": "..." }
+    }
+  ],
+  "warnings": []
+}
+```
+
+**Exemplo de resposta JSON** (inválida — não executa a consulta):
+
+```json
+{
+  "metadata": {
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/agregados/6579/metadados",
+    "params": {
+      "agregado_id": "6579",
+      "variaveis": "99999",
+      "localidades": "N6[3550308]",
+      "periodos": "2024"
+    }
+  },
+  "data": [],
+  "errors": [
+    "Nenhuma das variáveis \"99999\" existe no agregado \"6579\". Use `listar_variaveis_tabela_sidra` para ver as variáveis disponíveis."
+  ]
+}
+```
+
+**Possíveis warnings**: os mesmos de
+[`validar_consulta_sidra`](#20-validar_consulta_sidra), combinados com os de
+[`consultar_agregado`](#13-consultar_agregado) (nenhum diretamente, hoje).
+
+**Erros comuns**: os mesmos de
+[`validar_consulta_sidra`](#20-validar_consulta_sidra) e de
+[`consultar_agregado`](#13-consultar_agregado), mais os [erros comuns a todas
+as tools](#erros-comuns-a-todas-as-tools). Se a validação passar mas a
+consulta não retornar dados, `errors` traz a mesma mensagem de
+`consultar_agregado` (`Nenhum dado encontrado para o agregado "<agregado_id>"...`).
+
+**Fonte usada**: [IBGE Agregados (SIDRA) API](https://servicodados.ibge.gov.br/api/docs/agregados)
+— `GET /agregados/{agregado_id}/metadados` (validação) e, se válida,
+`GET /agregados/{agregado_id}/periodos/{periodos}/variaveis/{variaveis}`
+(mesmo endpoint de [`consultar_agregado`](#13-consultar_agregado)).
+
+---
+
 ## Resources e prompts
 
-Além das 14 tools acima, o servidor expõe:
+Além das 21 tools acima, o servidor expõe:
 
 - **Resource `ibge://status`**: status do servidor — `status`, `server`,
   `version`, lista de `tools` disponíveis e `timestamp` (UTC, ISO 8601). Não

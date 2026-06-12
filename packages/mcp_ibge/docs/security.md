@@ -90,6 +90,16 @@ Essas funções são usadas pelos clients e services (`clients/localidades.py`,
 - `LocalidadesService.buscar_municipio` → `validate_limit` (camada adicional
   além do `Field(ge=1, le=50)` já aplicado pela tool).
 
+O **SIDRA Query Builder** (`sidra_service.SidraService`) reutiliza as mesmas
+funções: `buscar_tabelas_sidra` → `validate_limit`;
+`validar_consulta_sidra`/`executar_consulta_sidra_validada` →
+`validate_agregado_id`, `validate_variaveis`, `validate_niveis` e
+`validate_periodos`, antes de consultar os metadados do agregado. Além da
+validação de formato, `validar_consulta_sidra` faz uma segunda validação,
+puramente local (sem rede), contra os metadados já obtidos do agregado
+(`sidra/query_builder.validar_consulta`) — `executar_consulta_sidra_validada`
+só chama a API de dados (`consultar_agregado`) se essa validação passar.
+
 Testes de formato válido e inválido para as sete funções estão em
 [`tests/test_validators.py`](../tests/test_validators.py).
 

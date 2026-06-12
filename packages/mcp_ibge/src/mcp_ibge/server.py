@@ -28,7 +28,7 @@ from pydantic import Field
 
 from .config import get_settings
 from .logging_config import configure_logging
-from .tools import agregados_tools, localidades_tools
+from .tools import agregados_tools, localidades_tools, sidra_tools
 
 _settings = get_settings()
 
@@ -47,6 +47,7 @@ mcp = FastMCP(
 
 localidades_tools.register_localidades_tools(mcp)
 agregados_tools.register_agregados_tools(mcp)
+sidra_tools.register_sidra_tools(mcp)
 
 
 @mcp.resource("ibge://status")

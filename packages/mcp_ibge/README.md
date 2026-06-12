@@ -50,6 +50,9 @@ JSON response with full source metadata so the answer can be verified.
 - **Agregados/SIDRA tools** (stable) — generic discovery and query of any
   SIDRA aggregate: list aggregates, inspect metadata, variables, periods and
   locations, and query data.
+- **SIDRA Query Builder** (new) — 7 tools to discover, explain, suggest and
+  validate SIDRA queries against an aggregate's real metadata before
+  querying, with **no LLM on the server** (keyword/metadata heuristics only).
 - **Population indicator** (experimental) —
   `consultar_populacao_municipio`, built on top of Agregados/SIDRA.
 - **Municipality code resolution** — fuzzy, accent- and case-insensitive
@@ -239,6 +242,25 @@ for more examples.
 | Tool | Description | Example |
 | --- | --- | --- |
 | `consultar_populacao_municipio` | Estimated resident population of a municipality, by name and state. | `consultar_populacao_municipio(nome="Niterói", uf="RJ")` |
+
+### SIDRA Query Builder
+
+> Discovery, suggestion and validation layer on top of Agregados/SIDRA — helps
+> an agent figure out `agregado_id`, `variaveis`, `localidades`, `periodos`
+> and `classificacao` without guessing. **No LLM is used on the server**:
+> `sugerir_consulta_sidra` is a keyword/metadata heuristic and always returns
+> a *proposal* plus `warnings` explaining it — it never executes a query. See
+> [docs/tools.md](docs/tools.md#sidra-query-builder) for the full reference.
+
+| Tool | Description | Example |
+| --- | --- | --- |
+| `buscar_tabelas_sidra` | Find SIDRA aggregates related to a topic, ranked by keyword match. | `buscar_tabelas_sidra(tema="população")` |
+| `explicar_tabela_sidra` | Explain an aggregate: name, survey, subject, periodicity, variables, classifications and limitations. | `explicar_tabela_sidra(agregado_id="6579")` |
+| `listar_variaveis_tabela_sidra` | List the variables of an aggregate (from its metadata). | `listar_variaveis_tabela_sidra(agregado_id="6579")` |
+| `listar_classificacoes_tabela_sidra` | List the classifications of an aggregate (from its metadata). | `listar_classificacoes_tabela_sidra(agregado_id="7060")` |
+| `sugerir_consulta_sidra` | Propose `agregado_id`/`variaveis`/`localidades` for a natural-language question, without executing it. | `sugerir_consulta_sidra(pergunta="população dos municípios em 2024")` |
+| `validar_consulta_sidra` | Validate query parameters against an aggregate's real metadata before querying. | `validar_consulta_sidra(agregado_id="6579", variaveis="9324", localidades="N6[3550308]", periodos="2024")` |
+| `executar_consulta_sidra_validada` | Validate, then call `consultar_agregado` only if validation passes. | `executar_consulta_sidra_validada(agregado_id="6579", variaveis="9324", localidades="N6[3550308]", periodos="2024")` |
 
 **Resources & prompts**: `ibge://status` (server status: version, available
 tools, query time) and `comparar_municipios` (a prompt that guides comparing

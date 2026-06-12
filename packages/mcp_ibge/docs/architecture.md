@@ -18,16 +18,45 @@ src/mcp_ibge/
 │   └── agregados.py       # AgregadoSummary, AgregadoMetadata, AgregadoVariable, AgregadoPeriod, AgregadoQueryResult + conversores *_from_raw
 ├── services/             # Regras de negócio: validação, filtros, aliases, indicadores
 │   ├── localidades_service.py  # retorna TypedToolResult[T] (data/metadata/warnings/errors)
-│   └── agregados_service.py    # idem; constantes AGREGADO_POPULACAO_ESTIMADA / VARIAVEL_POPULACAO_ESTIMADA
+│   ├── agregados_service.py    # idem; constantes AGREGADO_POPULACAO_ESTIMADA / VARIAVEL_POPULACAO_ESTIMADA
+│   └── sidra_service.py        # SIDRA Query Builder: descoberta, sugestão, validação e execução
+├── sidra/                # SIDRA Query Builder: parsing de metadados, validação local e sugestão
+│   ├── metadata_parser.py # parse_agregado_metadata(): JSON de /metadados -> AgregadoMetadataParsed
+│   ├── query_builder.py   # validar_consulta(): valida variaveis/localidades/periodos/classificacao
+│   └── suggestions.py     # sugestão por palavras-chave (sem LLM): ranquear_agregados, sugerir_variavel/localidade
 ├── tools/                # Camada MCP: expõe funções como `@mcp.tool()`
 │   ├── __init__.py        # `run_typed_tool()` (TypedToolResult) -> envelope padrão
 │   ├── localidades_tools.py  # register_localidades_tools(mcp)
-│   └── agregados_tools.py    # register_agregados_tools(mcp)
+│   ├── agregados_tools.py    # register_agregados_tools(mcp)
+│   └── sidra_tools.py        # register_sidra_tools(mcp): 7 tools do SIDRA Query Builder
 └── utils/
     ├── normalization.py   # normalize_text(): busca textual sem acento/caixa
     ├── cache.py            # TTLCache + singleton get_cache()/clear_cache()
+    ├── validators.py       # validação de formato (UF, agregado, variável, período, nível, limite)
     └── errors.py           # IBGEClientError e subclasses (NotFound, Validation, RateLimit, Server)
 ```
+
+## SIDRA Query Builder
+
+`sidra_service.SidraService` não duplica acesso HTTP: reutiliza
+`AgregadosClient`/`AgregadosService` para `listar_agregados` e
+`obter_metadados_agregado`, e usa `sidra/metadata_parser.py` para converter o
+JSON de `/agregados/{id}/metadados` em `AgregadoMetadataParsed` (periodicidade,
+níveis territoriais, variáveis, classificações, limitações em texto).
+
+- `sidra/query_builder.validar_consulta()` é **puramente local**: não faz
+  requisições, apenas confere `variaveis`/`localidades`/`periodos`/
+  `classificacao` (já validados em *formato* por `utils/validators.py`)
+  contra `AgregadoMetadataParsed`.
+- `sidra/suggestions.py` implementa `sugerir_consulta_sidra` **sem nenhum
+  modelo de linguagem**: extração de palavras-chave (remoção de
+  acentos/caixa/stopwords), pontuação por substring nos nomes de
+  agregados/variáveis já obtidos da API, e um dicionário fixo de
+  palavras-chave → nível territorial.
+- `executar_consulta_sidra_validada` chama `validar_consulta_sidra`
+  internamente e só delega a `AgregadosService.consultar_agregado` se
+  `data.valido=True` — nenhuma requisição de dados é feita para uma consulta
+  inválida.
 
 ## Fluxo de uma chamada
 

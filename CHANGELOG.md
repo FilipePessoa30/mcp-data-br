@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **SIDRA Query Builder** (`mcp_ibge.sidra` + `services/sidra_service.py` +
+  `tools/sidra_tools.py`): 7 new tools to discover, explain, suggest and
+  validate SIDRA queries against an aggregate's real metadata before
+  spending a data request — `buscar_tabelas_sidra`, `explicar_tabela_sidra`,
+  `listar_variaveis_tabela_sidra`, `listar_classificacoes_tabela_sidra`,
+  `sugerir_consulta_sidra`, `validar_consulta_sidra` and
+  `executar_consulta_sidra_validada`. They reuse `AgregadosClient`/
+  `AgregadosService` (no duplicated HTTP logic) and the existing
+  `mcp_ibge.utils.validators`.
+  - `sugerir_consulta_sidra` **never executes a query** and **uses no LLM**:
+    it ranks aggregates/variables by keyword overlap with the question
+    (`mcp_ibge.sidra.suggestions`) and always returns `warnings` explaining
+    the heuristic, plus alternative aggregates when relevant.
+  - `validar_consulta_sidra` checks parameter *format* (existing validators)
+    and then whether `variaveis`/`localidades`/`periodos`/`classificacao`
+    actually exist in the aggregate's metadata
+    (`mcp_ibge.sidra.query_builder.validar_consulta`), returning `avisos` for
+    non-fatal issues (e.g. a period outside the known range).
+  - `executar_consulta_sidra_validada` runs the same validation and only
+    calls `consultar_agregado` if it passes — no data request is made for an
+    invalid query.
+  - Every response includes `metadata.source_url`/`endpoint`/`params`, same
+    as all other tools. See
+    [docs/tools.md](packages/mcp_ibge/docs/tools.md#sidra-query-builder).
+
 - **Stronger input validation** (`mcp_ibge.utils.validators`, renamed from
   `utils.validation`): `validate_variaveis` (SIDRA variable IDs, e.g.
   `"93"`, `"93|1000093"`, or `"all"`) and `validate_limit` (pagination limit,
