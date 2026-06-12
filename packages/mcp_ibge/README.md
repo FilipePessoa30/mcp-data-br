@@ -55,6 +55,10 @@ JSON response with full source metadata so the answer can be verified.
   querying, with **no LLM on the server** (keyword/metadata heuristics only).
 - **Population indicator** (experimental) —
   `consultar_populacao_municipio`, built on top of Agregados/SIDRA.
+- **Geospatial tools** (new, experimental) — municipality/state boundary
+  meshes (`obter_malha_municipio`, `obter_malha_uf`) and bounding boxes
+  (`obter_bbox_municipio`, `gerar_geojson_municipios`) as GeoJSON, from the
+  IBGE Malhas API.
 - **Municipality code resolution** — fuzzy, accent- and case-insensitive
   search from a name to the 7-digit IBGE code, with disambiguation warnings.
 - **Typed JSON responses** — every tool is backed by Pydantic models.
@@ -274,6 +278,22 @@ for more examples.
 | --- | --- | --- |
 | `comparar_municipios` | Compare up to 10 municipalities (by name + state) on the indicators already implemented (currently, estimated population). Unresolved/ambiguous municipalities go to `data.municipios_nao_resolvidos`, and unsupported indicators go to `data.indicadores_nao_implementados` (name only, with a `warning`) — neither stops the comparison of the rest. | `comparar_municipios(municipios=[{"nome": "Rio de Janeiro", "uf": "RJ"}, {"nome": "Niterói", "uf": "RJ"}])` |
 
+### Geoespacial (experimental)
+
+> Municipality/state boundary meshes and bounding boxes as GeoJSON (RFC
+> 7946), from the [IBGE API de Malhas](https://servicodados.ibge.gov.br/api/docs/malhas).
+> By default (`simplificado=true`) tools use the simplified mesh quality
+> (`qualidade=minima`) and return a `warning` noting the simplification; see
+> [docs/tools.md](docs/tools.md#geoespacial) for details and response-size
+> limits.
+
+| Tool | Description | Example |
+| --- | --- | --- |
+| `obter_malha_municipio` | Get the GeoJSON mesh of a municipality by IBGE code. | `obter_malha_municipio(codigo_ibge=3303302)` |
+| `obter_malha_uf` | Get the GeoJSON mesh of a state by abbreviation or IBGE code. | `obter_malha_uf(uf="RJ")` |
+| `obter_bbox_municipio` | Get the bounding box (WGS84) of a municipality, computed from its simplified mesh. | `obter_bbox_municipio(codigo_ibge=3303302)` |
+| `gerar_geojson_municipios` | Combine the simplified meshes of up to 10 municipalities into a single GeoJSON `FeatureCollection`. | `gerar_geojson_municipios(codigos_ibge=[3304557, 3303302])` |
+
 **Resources & prompts**: `ibge://status` (server status: version, available
 tools, query time) and `comparar_municipios` (a prompt that guides comparing
 an indicator across municipalities using the `comparar_municipios` tool,
@@ -288,6 +308,9 @@ Dados** API:
   — regions, states, municipalities and districts.
 - [IBGE Agregados (SIDRA) API](https://servicodados.ibge.gov.br/api/docs/agregados)
   — statistical aggregates, including censuses and population estimates.
+- [IBGE API de Malhas](https://servicodados.ibge.gov.br/api/docs/malhas) —
+  municipality/state boundary geometries (GeoJSON), used by the geospatial
+  tools.
 
 See [docs/data_sources.md](docs/data_sources.md) for the response envelope
 format, [docs/architecture.md](docs/architecture.md) for the layered
@@ -316,8 +339,11 @@ end-to-end examples (with real JSON responses) of agents using these tools.
   based on real-world usage and feedback.
 - [ ] **v0.3.0** — Census helpers: dedicated tools for Census-specific
   aggregates and classifications.
-- [ ] **v0.4.0** — Geographic meshes: municipality/state boundary geometries
-  (malhas territoriais).
+- [x] **v0.4.0** — Geographic meshes: municipality/state boundary geometries
+  (malhas territoriais) — included as an **experimental preview**
+  (`obter_malha_municipio`, `obter_malha_uf`, `obter_bbox_municipio`,
+  `gerar_geojson_municipios`), pending real-world feedback before being
+  marked stable.
 - [ ] **v1.0.0** — Stable MCP server: published package, stable tool
   contracts for all domains, and `streamable-http` hardened for remote
   deployments.

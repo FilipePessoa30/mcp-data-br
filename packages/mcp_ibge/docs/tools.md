@@ -51,6 +51,13 @@ consultas, sem uso de LLM no servidor)
 
 23. [`comparar_municipios`](#23-comparar_municipios)
 
+**Geoespacial** (novo — malhas geográficas em GeoJSON e bounding boxes)
+
+24. [`obter_malha_municipio`](#24-obter_malha_municipio)
+25. [`obter_malha_uf`](#25-obter_malha_uf)
+26. [`obter_bbox_municipio`](#26-obter_bbox_municipio)
+27. [`gerar_geojson_municipios`](#27-gerar_geojson_municipios)
+
 ## Formato da resposta
 
 Toda tool retorna um envelope JSON com `metadata` e (`data` ou `error`):
@@ -2008,6 +2015,354 @@ Mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools).
   — `GET /agregados/6579/periodos/{periodos}/variaveis/9324` (agregado
   "Estimativas de população residente", [SIDRA tabela 6579](https://sidra.ibge.gov.br/tabela/6579))
   para cada município, quando o indicador de população é consultado.
+
+---
+
+## Geoespacial
+
+As tools desta seção consultam a
+[API de Malhas do IBGE](https://servicodados.ibge.gov.br/api/docs/malhas) e
+retornam `data` como um objeto [GeoJSON](https://geojson.org/) válido (RFC
+7946) — `FeatureCollection`, `Feature` ou uma geometria diretamente.
+
+Cada malha pode ser pedida em duas qualidades:
+
+- `simplificado=true` (padrão): qualidade `"minima"` da malha — resposta bem
+  menor, adequada para visualização em mapas. A resposta inclui um `warning`
+  avisando que a geometria foi simplificada.
+- `simplificado=false`: qualidade `"maxima"` — geometria mais detalhada, que
+  pode ser bem maior e, em municípios/UFs grandes, ultrapassar o
+  [limite de tamanho de resposta](#erros-comuns-a-todas-as-tools)
+  (`Settings.max_response_size_bytes`, 5 MB por padrão), retornando um erro
+  de servidor nesse caso.
+
+### 24. `obter_malha_municipio`
+
+**Descrição**: retorna a malha geográfica (GeoJSON) de um município, pelo
+código IBGE.
+
+**Parâmetros**:
+
+| Nome | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `codigo_ibge` | `integer` | sim | Código IBGE de 7 dígitos do município (ex.: `3304557`). |
+| `simplificado` | `boolean` | não (padrão `true`) | Se `true`, retorna a malha simplificada (qualidade `"minima"`); se `false`, a malha mais detalhada (qualidade `"maxima"`). |
+
+**Exemplo de chamada**:
+
+```python
+obter_malha_municipio(codigo_ibge=3303302)
+```
+
+**Exemplo de resposta JSON** (geometria simplificada para fins de exemplo):
+
+```json
+{
+  "ok": true,
+  "data": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": { "codarea": "3303302" },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[-43.13, -22.92], [-43.13, -22.86], [-43.05, -22.86], [-43.05, -22.92], [-43.13, -22.92]]]
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
+    "source_url": "https://servicodados.ibge.gov.br/api/v3/malhas/municipios/3303302",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/malhas/municipios/3303302",
+    "params": { "codigo_ibge": 3303302, "qualidade": "minima" },
+    "territorial_level": "N6",
+    "retrieved_at": "2026-06-12T12:00:00.000000+00:00",
+    "license_note": null
+  },
+  "warnings": [
+    {
+      "message": "Geometria simplificada (qualidade \"minima\" da malha do IBGE): adequada para visualização em mapas, mas não para análises que exigem precisão geométrica/cartográfica.",
+      "code": null
+    }
+  ],
+  "errors": []
+}
+```
+
+**Possíveis warnings**:
+
+- `Geometria simplificada (qualidade "minima" da malha do IBGE): adequada
+  para visualização em mapas, mas não para análises que exigem precisão
+  geométrica/cartográfica.` — emitido sempre que `simplificado=true`
+  (padrão).
+
+**Erros comuns**:
+
+| Situação | Mensagem (`error`) |
+| --- | --- |
+| `codigo_ibge` não tem 7 dígitos | `Código de município inválido: "<valor>". Deve ser o código IBGE de 7 dígitos (ex.: 3550308).` |
+| API não retorna um GeoJSON válido para o código informado | `A malha do município <codigo_ibge> não retornou um GeoJSON válido.` |
+
+Mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools)
+(incluindo o limite de tamanho de resposta, relevante com
+`simplificado=false`).
+
+**Fonte usada**: [IBGE API de Malhas](https://servicodados.ibge.gov.br/api/docs/malhas)
+— `GET /malhas/municipios/{id}?formato=application/vnd.geo+json&qualidade=...`.
+
+---
+
+### 25. `obter_malha_uf`
+
+**Descrição**: retorna a malha geográfica (GeoJSON) de uma UF.
+
+**Parâmetros**:
+
+| Nome | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `uf` | `string` | sim | Sigla da UF (ex.: `"RJ"`) ou código IBGE da UF (ex.: `"33"`). |
+| `simplificado` | `boolean` | não (padrão `true`) | Se `true`, retorna a malha simplificada (qualidade `"minima"`); se `false`, a malha mais detalhada (qualidade `"maxima"`). |
+
+**Exemplo de chamada**:
+
+```python
+obter_malha_uf(uf="RJ")
+```
+
+**Exemplo de resposta JSON** (geometria simplificada para fins de exemplo):
+
+```json
+{
+  "ok": true,
+  "data": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": { "codarea": "33" },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[-44.9, -23.4], [-44.9, -20.8], [-40.9, -20.8], [-40.9, -23.4], [-44.9, -23.4]]]
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
+    "source_url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/RJ",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/RJ",
+    "params": { "uf": "RJ", "qualidade": "minima" },
+    "territorial_level": "N3",
+    "retrieved_at": "2026-06-12T12:00:00.000000+00:00",
+    "license_note": null
+  },
+  "warnings": [
+    {
+      "message": "Geometria simplificada (qualidade \"minima\" da malha do IBGE): adequada para visualização em mapas, mas não para análises que exigem precisão geométrica/cartográfica.",
+      "code": null
+    }
+  ],
+  "errors": []
+}
+```
+
+**Possíveis warnings**: o mesmo aviso de geometria simplificada de
+[`obter_malha_municipio`](#24-obter_malha_municipio), emitido sempre que
+`simplificado=true` (padrão).
+
+**Erros comuns**:
+
+| Situação | Mensagem (`error`) |
+| --- | --- |
+| `uf` não corresponde a nenhuma sigla/código válido | `UF inválida: "XX". Use a sigla (ex.: "RJ") ou o código IBGE (ex.: "33").` |
+| API não retorna um GeoJSON válido para a UF informada | `A malha da UF "<uf>" não retornou um GeoJSON válido.` |
+
+Mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools)
+(incluindo o limite de tamanho de resposta, relevante com
+`simplificado=false` em UFs grandes).
+
+**Fonte usada**: [IBGE API de Malhas](https://servicodados.ibge.gov.br/api/docs/malhas)
+— `GET /malhas/estados/{uf}?formato=application/vnd.geo+json&qualidade=...`.
+
+---
+
+### 26. `obter_bbox_municipio`
+
+**Descrição**: retorna o bounding box (caixa delimitadora) de um município,
+em coordenadas WGS84 (graus decimais), calculado localmente a partir da
+malha simplificada (qualidade `"minima"`) do município. Útil para centralizar
+ou enquadrar um mapa sem precisar processar a geometria completa.
+
+**Parâmetros**:
+
+| Nome | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `codigo_ibge` | `integer` | sim | Código IBGE de 7 dígitos do município (ex.: `3304557`). |
+
+**Exemplo de chamada**:
+
+```python
+obter_bbox_municipio(codigo_ibge=3303302)
+```
+
+**Exemplo de resposta JSON**:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "min_longitude": -43.13,
+    "min_latitude": -22.92,
+    "max_longitude": -43.05,
+    "max_latitude": -22.86,
+    "bbox": [-43.13, -22.92, -43.05, -22.86]
+  },
+  "metadata": {
+    "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
+    "source_url": "https://servicodados.ibge.gov.br/api/v3/malhas/municipios/3303302",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/malhas/municipios/3303302",
+    "params": { "codigo_ibge": 3303302, "qualidade": "minima" },
+    "territorial_level": "N6",
+    "retrieved_at": "2026-06-12T12:00:00.000000+00:00",
+    "license_note": null
+  },
+  "warnings": [
+    {
+      "message": "Geometria simplificada (qualidade \"minima\" da malha do IBGE): adequada para visualização em mapas, mas não para análises que exigem precisão geométrica/cartográfica.",
+      "code": null
+    }
+  ],
+  "errors": []
+}
+```
+
+`bbox` segue o formato `[west, south, east, north]` do GeoJSON (campo `bbox`
+de uma `FeatureCollection`/`Feature`), enquanto `min_longitude`,
+`min_latitude`, `max_longitude` e `max_latitude` repetem os mesmos valores
+nomeados.
+
+**Possíveis warnings**:
+
+- O mesmo aviso de geometria simplificada de
+  [`obter_malha_municipio`](#24-obter_malha_municipio) — sempre presente,
+  pois o bounding box é calculado a partir da malha simplificada.
+
+**Erros comuns**:
+
+| Situação | Mensagem (`error`) |
+| --- | --- |
+| `codigo_ibge` não tem 7 dígitos | `Código de município inválido: "<valor>". Deve ser o código IBGE de 7 dígitos (ex.: 3550308).` |
+| A malha retornada não contém geometria válida | `Não foi possível calcular o bounding box do município <codigo_ibge>: a malha retornada não contém geometria válida.` |
+
+Mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools).
+
+**Fonte usada**: [IBGE API de Malhas](https://servicodados.ibge.gov.br/api/docs/malhas)
+— `GET /malhas/municipios/{id}?formato=application/vnd.geo+json&qualidade=minima`
+(bounding box calculado localmente a partir da geometria retornada).
+
+---
+
+### 27. `gerar_geojson_municipios`
+
+**Descrição**: combina a malha simplificada de até `MAX_MUNICIPIOS_GEOJSON =
+10` municípios em uma única `FeatureCollection` GeoJSON, com uma `Feature`
+por município (`properties.codigo_ibge` + a geometria da malha simplificada).
+Útil para montar um mapa com vários municípios em uma só consulta.
+
+Códigos IBGE que não retornarem uma malha válida não interrompem a geração:
+aparecem em `data.codigos_nao_resolvidos`, com o `motivo`.
+
+**Parâmetros**:
+
+| Nome | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `codigos_ibge` | `list[integer]` | sim | Códigos IBGE de 7 dígitos dos municípios (1 a 10), ex.: `[3304557, 3303302]`. |
+
+**Exemplo de chamada**:
+
+```python
+gerar_geojson_municipios(codigos_ibge=[3304557, 3303302])
+```
+
+**Exemplo de resposta JSON** (geometrias simplificadas para fins de exemplo):
+
+```json
+{
+  "ok": true,
+  "data": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": { "codigo_ibge": 3304557 },
+        "geometry": { "type": "Polygon", "coordinates": [[["...", "..."]]] }
+      },
+      {
+        "type": "Feature",
+        "properties": { "codigo_ibge": 3303302 },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[[-43.13, -22.92], [-43.13, -22.86], [-43.05, -22.86], [-43.05, -22.92], [-43.13, -22.92]]]
+        }
+      }
+    ],
+    "codigos_nao_resolvidos": []
+  },
+  "metadata": {
+    "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
+    "source_url": "https://servicodados.ibge.gov.br/api/v3/malhas/municipios/3304557",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v3/malhas/municipios/3304557",
+    "params": {
+      "codigos_ibge": [3304557, 3303302],
+      "endpoints": [
+        "https://servicodados.ibge.gov.br/api/v3/malhas/municipios/3304557",
+        "https://servicodados.ibge.gov.br/api/v3/malhas/municipios/3303302"
+      ]
+    },
+    "territorial_level": "N6",
+    "retrieved_at": "2026-06-12T12:00:00.000000+00:00",
+    "license_note": null
+  },
+  "warnings": [
+    {
+      "message": "Geometria simplificada (qualidade \"minima\" da malha do IBGE): adequada para visualização em mapas, mas não para análises que exigem precisão geométrica/cartográfica.",
+      "code": null
+    }
+  ],
+  "errors": []
+}
+```
+
+`codigos_nao_resolvidos` é um membro adicional do GeoJSON (um "foreign
+member", permitido pela RFC 7946) com a lista de `{"codigo_ibge", "motivo"}`
+dos códigos que não retornaram malha válida.
+
+**Possíveis warnings**:
+
+- O aviso de geometria simplificada de
+  [`obter_malha_municipio`](#24-obter_malha_municipio) — sempre presente,
+  pois esta tool sempre usa a malha simplificada (qualidade `"minima"`), para
+  manter o tamanho da resposta combinada sob controle.
+- `Códigos IBGE sem malha válida (ver `data.codigos_nao_resolvidos`): <códigos>`
+  — emitido quando ao menos um código não retorna malha válida, mas pelo
+  menos um outro código é resolvido.
+
+**Erros comuns**:
+
+| Situação | Mensagem (`error`) |
+| --- | --- |
+| `codigos_ibge` vazio | `Informe ao menos um código IBGE em "codigos_ibge".` |
+| `codigos_ibge` com mais de `MAX_MUNICIPIOS_GEOJSON` itens | `No máximo 10 municípios por chamada (recebidos N).` |
+| Nenhum dos códigos informados pôde ser resolvido | `Nenhum dos códigos IBGE informados pôde ser resolvido.` |
+| `codigos_ibge` com algum código que não tem 7 dígitos | `Código de município inválido: "<valor>". Deve ser o código IBGE de 7 dígitos (ex.: 3550308).` |
+
+Mais os [erros comuns a todas as tools](#erros-comuns-a-todas-as-tools).
+
+**Fonte usada**: [IBGE API de Malhas](https://servicodados.ibge.gov.br/api/docs/malhas)
+— `GET /malhas/municipios/{id}?formato=application/vnd.geo+json&qualidade=minima`
+para cada município informado.
 
 ---
 

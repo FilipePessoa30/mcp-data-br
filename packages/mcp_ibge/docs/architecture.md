@@ -28,13 +28,18 @@ src/mcp_ibge/
 │   ├── metadata_parser.py # parse_agregado_metadata(): JSON de /metadados -> AgregadoMetadataParsed
 │   ├── query_builder.py   # validar_consulta(): valida variaveis/localidades/periodos/classificacao
 │   └── suggestions.py     # sugestão por palavras-chave (sem LLM): ranquear_agregados, sugerir_variavel/localidade
+├── geo/                  # Módulo geoespacial: malhas (GeoJSON) e bounding boxes
+│   ├── client.py           # MalhasClient: GET /v3/malhas/{municipios,estados}/{id} em GeoJSON
+│   ├── service.py           # GeoService: is_valid_geojson, calcular_bbox, MAX_MUNICIPIOS_GEOJSON
+│   └── schemas.py           # QUALIDADE_*, GEOJSON_TYPES, BBox, GeoJSONMunicipios, MunicipioGeoNaoResolvido
 ├── tools/                # Camada MCP: expõe funções como `@mcp.tool()`
 │   ├── __init__.py        # `run_typed_tool()` (TypedToolResult) -> envelope padrão
 │   ├── localidades_tools.py  # register_localidades_tools(mcp)
 │   ├── agregados_tools.py    # register_agregados_tools(mcp)
 │   ├── sidra_tools.py        # register_sidra_tools(mcp): 7 tools do SIDRA Query Builder
 │   ├── perfil_tools.py       # register_perfil_tools(mcp): gerar_perfil_municipal
-│   └── comparacao_tools.py   # register_comparacao_tools(mcp): comparar_municipios
+│   ├── comparacao_tools.py   # register_comparacao_tools(mcp): comparar_municipios
+│   └── geo_tools.py          # register_geo_tools(mcp): malhas e bounding boxes (GeoJSON)
 └── utils/
     ├── normalization.py   # normalize_text(): busca textual sem acento/caixa
     ├── cache.py            # TTLCache + singleton get_cache()/clear_cache()
@@ -115,6 +120,43 @@ até `MAX_MUNICIPIOS` municípios em uma única chamada.
 - Se `municipios` vier vazio, exceder `MAX_MUNICIPIOS`, ou nenhum município
   puder ser resolvido, a resposta tem `ok=False` (sem fazer requisições
   desnecessárias nos dois primeiros casos).
+
+## Malhas Geográficas (Geo)
+
+`geo/` é um módulo independente — cliente, serviço e schemas próprios, fora
+de `clients/`/`services/`/`schemas/` — que consulta a
+[API de Malhas do IBGE](https://servicodados.ibge.gov.br/api/docs/malhas) e
+devolve GeoJSON (RFC 7946) praticamente como recebido da API, exceto para o
+bounding box (calculado localmente). Apenas `geo_tools.py` fica em `tools/`,
+seguindo a mesma convenção das demais tools.
+
+- `geo/client.py` define `MalhasClient` (subclasse de `AsyncIBGEClient`, path
+  base `/v3/malhas`), com `get_malha_municipio(codigo_ibge, qualidade)` e
+  `get_malha_uf(uf, qualidade)` — cada um pede explicitamente
+  `formato=application/vnd.geo+json` e valida `codigo_ibge`/`uf` via
+  `utils/validators` antes da requisição.
+- `geo/schemas.py` define `QUALIDADE_SIMPLIFICADA = "minima"` e
+  `QUALIDADE_COMPLETA = "maxima"` (os dois valores aceitos pelo parâmetro
+  `qualidade` da API), `GEOJSON_TYPES` (tipos GeoJSON válidos por RFC 7946,
+  usados por `service.is_valid_geojson`), `BBox` e `GeoJSONMunicipios` (com
+  `codigos_nao_resolvidos` como "foreign member" do GeoJSON).
+- `geo/service.py` (`GeoService`) implementa as 4 tools:
+  - `obter_malha_municipio`/`obter_malha_uf` repassam o GeoJSON da API sem
+    alterações, com `metadata.territorial_level` `"N6"`/`"N3"`.
+  - `obter_bbox_municipio` reusa `get_malha_municipio` (sempre qualidade
+    `"minima"`) e calcula o bounding box localmente (`calcular_bbox`),
+    achatando recursivamente as `coordinates` da geometria.
+  - `gerar_geojson_municipios` busca a malha simplificada de até
+    `MAX_MUNICIPIOS_GEOJSON = 10` municípios e monta uma `FeatureCollection`
+    com uma `Feature` por município; códigos sem malha válida vão para
+    `codigos_nao_resolvidos` (com `motivo`), sem interromper os demais.
+- Por padrão (`simplificado=True`), todas as tools usam qualidade `"minima"`
+  e a resposta inclui um aviso fixo informando que a geometria foi
+  simplificada. `simplificado=False` (apenas em
+  `obter_malha_municipio`/`obter_malha_uf`) usa qualidade `"maxima"`, sem o
+  aviso, mas o tamanho pode ultrapassar `Settings.max_response_size_bytes`
+  para UFs/municípios grandes — nesse caso `AsyncIBGEClient` converte a
+  resposta em `IBGEServerError` antes de retornar ao cliente MCP.
 
 ## Fluxo de uma chamada
 

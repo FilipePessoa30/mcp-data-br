@@ -250,3 +250,42 @@ def agregado_consulta_resposta() -> list[dict[str, Any]]:
             ],
         }
     ]
+
+
+def _malha_geojson(codarea: str, coordenadas: list[list[list[float]]]) -> dict[str, Any]:
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"codarea": codarea},
+                "geometry": {"type": "Polygon", "coordinates": coordenadas},
+            }
+        ],
+    }
+
+
+@pytest.fixture
+def malha_municipio_niteroi() -> dict[str, Any]:
+    """Pequena malha GeoJSON fictícia (não oficial) para o município de Niterói (3303302)."""
+    return _malha_geojson(
+        "3303302",
+        [
+            [
+                [-43.13, -22.92],
+                [-43.13, -22.86],
+                [-43.05, -22.86],
+                [-43.05, -22.92],
+                [-43.13, -22.92],
+            ]
+        ],
+    )
+
+
+@pytest.fixture
+def malha_uf_rj() -> dict[str, Any]:
+    """Pequena malha GeoJSON fictícia (não oficial) para a UF do Rio de Janeiro (RJ)."""
+    return _malha_geojson(
+        "33",
+        [[[-44.9, -23.4], [-44.9, -20.8], [-40.9, -20.8], [-40.9, -23.4], [-44.9, -23.4]]],
+    )

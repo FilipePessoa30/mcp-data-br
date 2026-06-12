@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Geoespacial** (`geo/client.py` + `geo/service.py` + `geo/schemas.py` +
+  `tools/geo_tools.py`): 4 new tools return municipality/state boundary
+  meshes and bounding boxes as GeoJSON (RFC 7946), from the
+  [IBGE API de Malhas](https://servicodados.ibge.gov.br/api/docs/malhas) —
+  `obter_malha_municipio(codigo_ibge, simplificado=true)`,
+  `obter_malha_uf(uf, simplificado=true)`, `obter_bbox_municipio(codigo_ibge)`
+  and `gerar_geojson_municipios(codigos_ibge)`.
+  - By default (`simplificado=true`), tools request the simplified mesh
+    quality (`qualidade=minima`) and the response includes a `warning`
+    noting that the geometry was simplified; `simplificado=false` (only on
+    `obter_malha_municipio`/`obter_malha_uf`) requests the full-detail mesh
+    (`qualidade=maxima`), which can exceed
+    `MCP_IBGE_MAX_RESPONSE_SIZE_BYTES` for large states/municipalities and
+    return a server error in that case.
+  - `obter_bbox_municipio` computes the bounding box (WGS84,
+    `[west, south, east, north]`) locally from the simplified mesh — the
+    response always includes the simplification `warning`.
+  - `gerar_geojson_municipios` combines the simplified mesh of up to 10
+    municipalities into a single `FeatureCollection`; codes without a valid
+    mesh go to `data.codigos_nao_resolvidos` (with the reason) without
+    stopping the rest.
+  - Every response includes `metadata.source_url`/`endpoint`/`params` and
+    `metadata.territorial_level` (`"N6"`/`"N3"`), same as all other tools.
+    See [docs/tools.md](packages/mcp_ibge/docs/tools.md#geoespacial).
+
 - **Comparação de Municípios** (`schemas/comparacao.py` +
   `services/comparacao_service.py` + `tools/comparacao_tools.py`): nova tool
   `comparar_municipios(municipios, indicadores=None, ano=None)` compara até
