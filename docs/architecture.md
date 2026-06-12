@@ -8,11 +8,16 @@ independently publishable Python packages — one per MCP server.
 mcp-data-br/
 ├── pyproject.toml          # Workspace root (virtual project, not published)
 ├── packages/
-│   └── mcp_ibge/            # mcp-ibge: IBGE Localidades + Agregados/SIDRA
-│       ├── pyproject.toml    # Publishable package (PyPI: mcp-ibge)
-│       ├── src/mcp_ibge/      # server.py, config.py, clients/, services/, schemas/, tools/, utils/
+│   ├── mcp_ibge/            # mcp-ibge: IBGE Localidades + Agregados/SIDRA
+│   │   ├── pyproject.toml    # Publishable package (PyPI: mcp-ibge)
+│   │   ├── src/mcp_ibge/      # server.py, config.py, clients/, services/, schemas/, tools/, utils/
+│   │   ├── tests/
+│   │   ├── docs/               # Module-specific docs
+│   │   └── README.md
+│   └── mcp_inep/            # mcp-inep: INEP education data (planning, no tools yet)
+│       ├── pyproject.toml    # Publishable package (PyPI: mcp-inep)
+│       ├── src/mcp_inep/      # server.py, config.py, clients/, services/, schemas/, tools/, utils/
 │       ├── tests/
-│       ├── docs/               # Module-specific docs
 │       └── README.md
 ├── docs/                    # Monorepo-level docs (this directory)
 ├── examples/                # MCP client configs and prompts, shared across modules

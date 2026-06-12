@@ -27,8 +27,13 @@ module's own README (e.g.
   `mcp-ibge` tools as part of this — if/when a split happens, it will be
   additive (new package, with `mcp-ibge` either re-exporting or deprecating
   gradually). See [Module: mcp-sidra (planned)](modules/sidra.md).
-- **`mcp-inep`** — education data from INEP (e.g. Censo Escolar, ENEM,
-  IDEB), future.
+- **`mcp-inep`** — education data from INEP: Censo Escolar, Ideb, Saeb,
+  Enem, schools by município and education indicators, combined with
+  `mcp-ibge` municipality codes for municipal education profiles. A package
+  scaffold (no tools yet) already exists at
+  [`packages/mcp_inep/`](https://github.com/FilipePessoa30/mcp-ibge/tree/main/packages/mcp_inep)
+  — see [Module: mcp-inep (planned)](modules/inep.md) for the planned tools,
+  data sources, challenges and version-by-version implementation plan.
 - **`mcp-dados-gov-br`** — generic access to datasets published on
   [dados.gov.br](https://dados.gov.br/), future.
 - **`mcp-bcb`** — economic/financial indicators from the Banco Central do

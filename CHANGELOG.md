@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`mcp-inep` planning scaffold**: new `packages/mcp_inep/` workspace
+  member (FastMCP server with zero tools registered, `pydantic-settings`
+  config with `MCP_INEP_*`, the standard `clients/`/`services/`/`schemas/`/
+  `tools/`/`utils/` layout and a placeholder test) plus
+  [docs/modules/inep.md](docs/modules/inep.md), a technical roadmap covering
+  planned data sources (Censo Escolar, Ideb, Saeb, Enem), the 5 planned
+  tools (`buscar_escolas_municipio`, `obter_indicadores_educacionais`,
+  `comparar_ideb_municipios`, `listar_microdados_disponiveis`,
+  `gerar_perfil_educacional_municipal`), challenges, limits and a
+  version-by-version implementation plan. No tools are implemented yet.
+
 - **Docker support**: `Dockerfile` (multi-stage, `ghcr.io/astral-sh/uv` +
   `python:3.12-slim`, dependencies installed with `uv`, runs as a non-root
   `mcp` user), `docker-compose.yml` (preconfigured for `streamable-http`),

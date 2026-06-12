@@ -71,6 +71,7 @@ nav:
   - Modules:
       - mcp-ibge: modules/ibge.md
       - mcp-sidra (planned): modules/sidra.md
+      - mcp-inep (planned): modules/inep.md
   - Tools:
       - Localidades: tools/localidades.md
       - Agregados / SIDRA: tools/agregados.md

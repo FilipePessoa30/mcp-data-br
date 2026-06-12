@@ -178,6 +178,7 @@ small enough for the README to load quickly.
 | Module | Status | Data | Docs |
 | --- | --- | --- | --- |
 | [`mcp-ibge`](packages/mcp_ibge/) | **Stable** | IBGE — geographic locations (regions, states, municipalities, districts) and Agregados/SIDRA statistical aggregates | [README](packages/mcp_ibge/README.md) · [docs](packages/mcp_ibge/docs/) |
+| [`mcp-inep`](packages/mcp_inep/) | **Planning** (scaffold, no tools yet) | INEP — Censo Escolar, Ideb, Saeb, Enem, schools by município, education indicators | [README](packages/mcp_inep/README.md) · [roadmap](docs/modules/inep.md) |
 
 ## Secure by default
 
@@ -214,12 +215,15 @@ modules follow the same pattern.
 ## Planned modules
 
 mcp-data-br is designed to grow. Planned/possible future modules include
-`mcp-sidra` (a dedicated SIDRA module, split out of `mcp-ibge`), `mcp-inep`
-(education data), `mcp-dados-gov-br` (generic dados.gov.br access),
-`mcp-bcb` (Banco Central indicators) and `mcp-rio` (Rio de Janeiro open
-data). See [docs/roadmap.md](docs/roadmap.md) for details — none of these
-are implemented yet, but the workspace is structured so they can be added as
-new packages without touching existing ones.
+`mcp-sidra` (a dedicated SIDRA module, split out of `mcp-ibge`),
+[`mcp-inep`](docs/modules/inep.md) (education data — Censo Escolar, Ideb,
+Saeb, Enem, schools by município; package scaffold already in
+[`packages/mcp_inep/`](packages/mcp_inep/)), `mcp-dados-gov-br` (generic
+dados.gov.br access), `mcp-bcb` (Banco Central indicators) and `mcp-rio`
+(Rio de Janeiro open data). See [docs/roadmap.md](docs/roadmap.md) for
+details — except for `mcp-inep`'s scaffold, none of these are implemented
+yet, but the workspace is structured so they can be added as new packages
+without touching existing ones.
 
 ## Quick start
 
@@ -277,10 +281,14 @@ roadmap of the IBGE module, see
 mcp-data-br/
 ├── pyproject.toml          # uv workspace root (virtual project)
 ├── packages/
-│   └── mcp_ibge/             # mcp-ibge: IBGE Localidades + Agregados/SIDRA
-│       ├── src/mcp_ibge/
+│   ├── mcp_ibge/             # mcp-ibge: IBGE Localidades + Agregados/SIDRA
+│   │   ├── src/mcp_ibge/
+│   │   ├── tests/
+│   │   ├── docs/
+│   │   └── README.md
+│   └── mcp_inep/             # mcp-inep: INEP education data (planning, no tools yet)
+│       ├── src/mcp_inep/
 │       ├── tests/
-│       ├── docs/
 │       └── README.md
 ├── docs/                    # Monorepo-level docs (architecture, roadmap, security, data sources)
 ├── examples/                # MCP client configs (Claude Desktop, Cursor, Open WebUI) and prompts

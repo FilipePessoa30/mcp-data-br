@@ -47,6 +47,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 FROM python:3.12-slim AS runtime
 
+# Aplica patches de segurança do sistema base (Debian) antes de criar o
+# usuário e copiar a aplicação, para não depender apenas da data de
+# publicação da tag `python:3.12-slim` no Docker Hub.
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
 # Usuário/grupo dedicados e não privilegiados para executar o servidor.
 RUN groupadd --system --gid 1000 mcp \
     && useradd --system --uid 1000 --gid mcp --home-dir /app --shell /usr/sbin/nologin mcp

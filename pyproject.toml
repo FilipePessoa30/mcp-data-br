@@ -20,7 +20,10 @@ keywords = [
 # built or published itself. Its `dependencies` make `uv sync` install every
 # workspace member (and their entry points, e.g. `mcp-ibge`) into a single
 # shared environment, so `uv run mcp-ibge` works from the repository root.
-dependencies = ["mcp-ibge"]
+# `mcp-inep` is a planning-stage scaffold (no tools yet, see
+# packages/mcp_inep/ and docs/modules/inep.md) — included here so it's part
+# of the same workspace lock/sync as every other module.
+dependencies = ["mcp-ibge", "mcp-inep"]
 
 [project.optional-dependencies]
 dev = [
@@ -47,3 +50,4 @@ members = ["packages/*"]
 
 [tool.uv.sources]
 mcp-ibge = { workspace = true }
+mcp-inep = { workspace = true }
