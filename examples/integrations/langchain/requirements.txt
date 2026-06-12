@@ -1,0 +1,6 @@
+# Agente LangGraph (ReAct) usando as tools do mcp-ibge via MCP, com LLM local
+# (Ollama). mcp-ibge é executado via `uvx` (requer `uv` instalado), não
+# precisa estar listado aqui.
+langchain-mcp-adapters>=0.1.0
+langchain-ollama>=0.2.0
+langgraph>=0.2.0

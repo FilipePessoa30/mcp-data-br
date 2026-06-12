@@ -1,0 +1,5 @@
+# Script com o OpenAI Agents SDK + mcp-ibge via MCP, apontado para um
+# endpoint local OpenAI-compatible servido pelo Ollama (sem OPENAI_API_KEY).
+# mcp-ibge é executado via `uvx` (requer `uv` instalado), não precisa estar
+# listado aqui.
+openai-agents>=0.0.5

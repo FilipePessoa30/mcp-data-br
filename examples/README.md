@@ -11,6 +11,9 @@ add their own subfolders here following the same pattern.
   [`mcpo`](https://github.com/open-webui/mcpo) for Open WebUI.
 - [`agent_recipes/`](agent_recipes/) — natural-language prompts and example
   tool calls for each module, useful for testing a new connection.
+- [`integrations/`](integrations/) — minimal agent examples using
+  `mcp-ibge` from LangChain, LlamaIndex, the OpenAI Agents SDK, and a plain
+  `mcp` + Ollama script — all running locally, no API key required.
 
 For module-specific setup instructions, see each package's docs, e.g.
 [packages/mcp_ibge/docs/client_setup.md](../packages/mcp_ibge/docs/client_setup.md).
