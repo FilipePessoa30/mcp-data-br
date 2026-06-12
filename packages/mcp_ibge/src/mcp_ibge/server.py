@@ -57,6 +57,7 @@ mcp = FastMCP(
         "(source_name, source_url, retrieved_at, endpoint, params) para "
         "rastreabilidade."
     ),
+    host=_settings.host,
     port=_settings.port,
 )
 

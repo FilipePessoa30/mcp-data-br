@@ -252,6 +252,21 @@ uv run mcp-data-br sidra metadados --agregado 6579 --pretty
 See [packages/mcp_ibge/README.md#cli-mcp-data-br](packages/mcp_ibge/README.md#cli-mcp-data-br)
 for the full command reference.
 
+### Run it in Docker
+
+A `Dockerfile` and `docker-compose.yml` are provided at the repository root,
+so the server can run in an isolated container without installing Python or
+`uv` on the host:
+
+```bash
+docker build -t mcp-ibge .
+docker run -i --rm mcp-ibge                  # stdio (default)
+docker compose up -d                         # streamable-http
+```
+
+See [docs/docker.md](docs/docker.md) for the full guide (environment
+variables, healthcheck, MCP client config for `docker run`).
+
 For the full feature list, available tools, configuration options and
 roadmap of the IBGE module, see
 **[packages/mcp_ibge/README.md](packages/mcp_ibge/README.md)**.

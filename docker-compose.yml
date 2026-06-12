@@ -1,0 +1,41 @@
+# Compose para rodar o `mcp-ibge` em modo `streamable-http`, isolado em
+# container e acessível via rede/HTTP (ex.: para Open WebUI via `mcpo`, ou
+# qualquer cliente MCP que suporte `streamable-http`).
+#
+#   docker compose up -d
+#   docker compose logs -f
+#
+# Para clientes MCP locais (Claude Desktop, Cursor), o modo principal é
+# `stdio`, que não combina bem com `docker compose up -d` (precisa de um
+# stdin interativo ligado ao cliente). Use `docker run -i` diretamente — veja
+# docs/docker.md.
+#
+# Variáveis de ambiente: veja packages/mcp_ibge/.env.example e
+# docs/docker.md para a lista completa e seus valores padrão. Para
+# sobrescrevê-las sem editar este arquivo, crie um `.env` na raiz do projeto
+# (lido automaticamente pelo Docker Compose) ou descomente `env_file` abaixo.
+
+services:
+  mcp-ibge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mcp-ibge:latest
+    container_name: mcp-ibge
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      MCP_IBGE_TRANSPORT: streamable-http
+      MCP_IBGE_HOST: 0.0.0.0
+      MCP_IBGE_PORT: 8000
+      # MCP_DATA_BR_LOG_LEVEL: INFO
+      # MCP_DATA_BR_ENABLE_CACHE: "true"
+    # env_file:
+    #   - .env
+    healthcheck:
+      test: ["CMD", "python", "docker/healthcheck.py"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3

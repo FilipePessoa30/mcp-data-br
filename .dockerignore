@@ -1,0 +1,41 @@
+# Controle de versão e CI
+.git/
+.github/
+
+# Ambientes virtuais e caches
+.venv/
+venv/
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Build/artefatos
+build/
+dist/
+**/*.egg-info/
+.eggs/
+
+# Documentação (não necessária para rodar o servidor)
+docs/
+site/
+mkdocs.yml
+examples/
+evals/
+
+# Editores e SO
+.vscode/
+.idea/
+.DS_Store
+
+# Arquivos do próprio Docker (exceto o healthcheck, copiado explicitamente)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Segredos locais — nunca devem entrar na imagem
+.env
+**/.env

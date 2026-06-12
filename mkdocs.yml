@@ -63,6 +63,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - Installation: installation.md
+  - Docker: docker.md
   - Clients:
       - Claude Desktop: clients/claude-desktop.md
       - Cursor: clients/cursor.md

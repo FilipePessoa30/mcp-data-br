@@ -204,6 +204,7 @@ takes precedence.
 | `MCP_IBGE_CACHE_MAX_SIZE` | `256` | Maximum number of cached responses. |
 | `MCP_DATA_BR_LOG_LEVEL` / `MCP_IBGE_LOG_LEVEL` | `INFO` | Log level (`DEBUG`, `INFO`, ...); always written to `stderr` as structured JSON lines (one object per record: `timestamp`, `level`, `logger`, `message`). |
 | `MCP_IBGE_TRANSPORT` | `stdio` | MCP transport (`stdio` or `streamable-http`). |
+| `MCP_IBGE_HOST` | `127.0.0.1` | Bind address for the `streamable-http` transport. In Docker, set to `0.0.0.0` (the provided image already does) so the published port is reachable from outside the container — see [docs/docker.md](../../docs/docker.md). |
 | `MCP_IBGE_PORT` | `8000` | Port used by the `streamable-http` transport. |
 
 ## CLI (`mcp-data-br`)
@@ -260,6 +261,30 @@ uv run mcp-data-br ibge codigo-municipio "Niterói" --uf RJ --pretty
 
 Run `uv run mcp-data-br --help`, `uv run mcp-data-br ibge --help` or
 `uv run mcp-data-br sidra --help` for the full command/option reference.
+
+## Docker
+
+A `Dockerfile` and `docker-compose.yml` are provided at the repository root
+to run the server in an isolated container, with no local Python/`uv`
+install required:
+
+```bash
+docker build -t mcp-ibge .
+
+# stdio (default, for local MCP clients) — run attached/interactive:
+docker run -i --rm mcp-ibge
+
+# streamable-http — publish the port:
+docker run --rm -p 8000:8000 -e MCP_IBGE_TRANSPORT=streamable-http mcp-ibge
+
+# or, for streamable-http:
+docker compose up -d
+```
+
+The image is based on `python:3.12-slim`, installs dependencies with `uv`,
+runs as a non-root user, and includes a `HEALTHCHECK` for
+`streamable-http` mode. See [docs/docker.md](../../docs/docker.md) for
+details, environment variables and MCP client configuration.
 
 ## Available tools
 

@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Docker support**: `Dockerfile` (multi-stage, `ghcr.io/astral-sh/uv` +
+  `python:3.12-slim`, dependencies installed with `uv`, runs as a non-root
+  `mcp` user), `docker-compose.yml` (preconfigured for `streamable-http`),
+  `.dockerignore` and `docker/healthcheck.py`. `stdio` remains the main mode
+  (`docker run -i --rm mcp-ibge`); `streamable-http` is exposed by setting
+  `MCP_IBGE_TRANSPORT=streamable-http` and publishing `MCP_IBGE_PORT`. New
+  `MCP_IBGE_HOST` setting (default `127.0.0.1`, `0.0.0.0` in the image) lets
+  the `streamable-http` transport bind to all interfaces inside the
+  container. See [docs/docker.md](docs/docker.md).
+
 - **CLI `mcp-data-br`** (`cli.py`, new `mcp-data-br` script entry point built
   with [Typer](https://typer.tiangolo.com/)): lets users try out the
   IBGE/SIDRA tools from the terminal without configuring Claude Desktop or

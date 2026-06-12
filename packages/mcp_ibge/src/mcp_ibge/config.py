@@ -80,7 +80,11 @@ class Settings(BaseSettings):
     )
     transport: str = "stdio"
 
-    # Porta usada quando `transport` é "streamable-http" (ignorada em "stdio").
+    # Host/porta usados quando `transport` é "streamable-http" (ignorados em
+    # "stdio"). O padrão `127.0.0.1` é o mais seguro para uso local; em
+    # containers Docker, defina `MCP_IBGE_HOST=0.0.0.0` para aceitar conexões
+    # de fora do container (ver `docs/docker.md`).
+    host: str = "127.0.0.1"
     port: int = 8000
 
     @field_validator("api_base_url")

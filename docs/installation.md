@@ -106,6 +106,7 @@ precedence.
 | `MCP_IBGE_CACHE_MAX_SIZE` | `256` | Maximum number of cached responses. |
 | `MCP_DATA_BR_LOG_LEVEL` / `MCP_IBGE_LOG_LEVEL` | `INFO` | Log level (`DEBUG`, `INFO`, ...); always written to `stderr` as structured JSON lines. |
 | `MCP_IBGE_TRANSPORT` | `stdio` | MCP transport (`stdio` or `streamable-http`). |
+| `MCP_IBGE_HOST` | `127.0.0.1` | Bind address for the `streamable-http` transport. In Docker, set to `0.0.0.0` so the published port is reachable from outside the container — see [Docker](docker.md). |
 | `MCP_IBGE_PORT` | `8000` | Port used by the `streamable-http` transport. |
 
 Example `.env`:
@@ -120,6 +121,8 @@ MCP_IBGE_TRANSPORT=stdio
 
 ## Next steps
 
+- [Docker](docker.md) — run the server in an isolated container (`stdio` or
+  `streamable-http`).
 - [Clients](clients/claude-desktop.md) — full client setup for Claude
   Desktop, Cursor and Open WebUI.
 - [Getting Started](getting-started.md) — first run and first prompt.
