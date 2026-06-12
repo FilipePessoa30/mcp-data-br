@@ -34,7 +34,7 @@ comparar_municipios(
         ]
       },
       {
-        "codigo_ibge": 3302904,
+        "codigo_ibge": 3302700,
         "nome": "Maricá",
         "uf_sigla": "RJ",
         "uf_nome": "Rio de Janeiro",
@@ -58,7 +58,7 @@ comparar_municipios(
       "https://servicodados.ibge.gov.br/api/v1/localidades/estados/RJ/municipios",
       "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3303302",
       "https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324",
-      "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302904"
+      "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302700"
     ],
     "limitacoes": [
       "Esta comparação cobre apenas os indicadores listados em `indicadores_consultados`; indicadores em `indicadores_nao_implementados` são apenas sugestões de nomes, não dados.",

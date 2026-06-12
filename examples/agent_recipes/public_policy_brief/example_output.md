@@ -7,14 +7,14 @@
   "ok": true,
   "data": {
     "municipio": {
-      "codigo_ibge": 3302904,
+      "codigo_ibge": 3302700,
       "nome": "Maricá",
       "uf_sigla": "RJ",
       "uf_nome": "Rio de Janeiro",
       "regiao_nome": "Sudeste",
       "microrregiao_ou_regiao_intermediaria": {
         "tipo": "microrregiao",
-        "id": 33010,
+        "id": 33018,
         "nome": "Rio de Janeiro"
       }
     },
@@ -29,7 +29,7 @@
       }
     ],
     "fontes": [
-      "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302904",
+      "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302700",
       "https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324"
     ],
     "limitacoes": [
@@ -46,10 +46,10 @@
   },
   "metadata": {
     "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
-    "source_url": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302904",
+    "source_url": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302700",
     "official_source": "https://www.ibge.gov.br/",
-    "endpoint": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302904",
-    "params": { "nome": "Maricá", "uf": "RJ", "municipio_id": 3302904 },
+    "endpoint": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302700",
+    "params": { "nome": "Maricá", "uf": "RJ", "municipio_id": 3302700 },
     "retrieved_at": "2026-06-12T12:00:00.000000+00:00",
     "period": null,
     "territorial_level": null,
@@ -95,7 +95,7 @@
 > Lista ilustrativa e truncada — o agregado 6579 normalmente cobre uma série
 > mais longa que 5 anos.
 
-## 3. Resposta da tool `consultar_agregado(agregado_id="6579", variaveis="9324", localidades="N6[3302904]", periodos="-5")`
+## 3. Resposta da tool `consultar_agregado(agregado_id="6579", variaveis="9324", localidades="N6[3302700]", periodos="-5")`
 
 ```json
 {
@@ -104,7 +104,7 @@
     {
       "agregado_id": "6579",
       "variavel_id": "9324",
-      "localidade_id": "3302904",
+      "localidade_id": "3302700",
       "localidade_nome": "Maricá",
       "periodo": "2020",
       "valor": 161226.0,
@@ -114,7 +114,7 @@
     {
       "agregado_id": "6579",
       "variavel_id": "9324",
-      "localidade_id": "3302904",
+      "localidade_id": "3302700",
       "localidade_nome": "Maricá",
       "periodo": "2021",
       "valor": 168066.0,
@@ -124,7 +124,7 @@
     {
       "agregado_id": "6579",
       "variavel_id": "9324",
-      "localidade_id": "3302904",
+      "localidade_id": "3302700",
       "localidade_nome": "Maricá",
       "periodo": "2022",
       "valor": 175268.0,
@@ -134,7 +134,7 @@
     {
       "agregado_id": "6579",
       "variavel_id": "9324",
-      "localidade_id": "3302904",
+      "localidade_id": "3302700",
       "localidade_nome": "Maricá",
       "periodo": "2023",
       "valor": 181458.0,
@@ -144,7 +144,7 @@
     {
       "agregado_id": "6579",
       "variavel_id": "9324",
-      "localidade_id": "3302904",
+      "localidade_id": "3302700",
       "localidade_nome": "Maricá",
       "periodo": "2024",
       "valor": 187051.0,
@@ -159,7 +159,7 @@
     "params": {
       "agregado_id": "6579",
       "variaveis": "9324",
-      "localidades": "N6[3302904]",
+      "localidades": "N6[3302700]",
       "periodos": "-5"
     },
     "retrieved_at": "2026-06-12T12:00:00.000000+00:00",
@@ -179,8 +179,8 @@
 
 > **Nota técnica: crescimento populacional de Maricá (RJ)**
 >
-> **Município**: Maricá (RJ) — código IBGE `3302904`, região Sudeste,
-> microrregião Rio de Janeiro (código 33010).
+> **Município**: Maricá (RJ) — código IBGE `3302700`, região Sudeste,
+> microrregião Rio de Janeiro (código 33018).
 >
 > **População estimada (2024)**: 187.051 habitantes.
 >
@@ -210,10 +210,10 @@
 ## Como verificar a fonte
 
 - Perfil básico:
-  `https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302904`
+  `https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302700`
 - População mais recente:
-  `https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324?localidades=N6[3302904]`
+  `https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324?localidades=N6[3302700]`
 - Série histórica (2020–2024):
-  `https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/2020-2024/variaveis/9324?localidades=N6[3302904]`
+  `https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/2020-2024/variaveis/9324?localidades=N6[3302700]`
 - Todos esses endpoints são públicos e podem ser abertos diretamente no
   navegador para conferência.

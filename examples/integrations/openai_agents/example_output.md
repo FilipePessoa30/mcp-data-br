@@ -13,14 +13,14 @@ gerar_perfil_municipal(nome="Maricá", uf="RJ")
   "ok": true,
   "data": {
     "municipio": {
-      "codigo_ibge": 3302904,
+      "codigo_ibge": 3302700,
       "nome": "Maricá",
       "uf_sigla": "RJ",
       "uf_nome": "Rio de Janeiro",
       "regiao_nome": "Sudeste",
       "microrregiao_ou_regiao_intermediaria": {
         "tipo": "microrregiao",
-        "id": 33007,
+        "id": 33018,
         "nome": "Rio de Janeiro"
       }
     },
@@ -35,7 +35,7 @@ gerar_perfil_municipal(nome="Maricá", uf="RJ")
       }
     ],
     "fontes": [
-      "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302904",
+      "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302700",
       "https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324"
     ],
     "limitacoes": [
@@ -52,10 +52,10 @@ gerar_perfil_municipal(nome="Maricá", uf="RJ")
   },
   "metadata": {
     "source_name": "IBGE - Instituto Brasileiro de Geografia e Estatística",
-    "source_url": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302904",
+    "source_url": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302700",
     "official_source": "https://www.ibge.gov.br/",
-    "endpoint": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302904",
-    "params": { "nome": "Maricá", "uf": "RJ", "municipio_id": 3302904 },
+    "endpoint": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302700",
+    "params": { "nome": "Maricá", "uf": "RJ", "municipio_id": 3302700 },
     "retrieved_at": "2026-06-12T12:00:00.000000+00:00",
     "period": null,
     "territorial_level": null,
@@ -78,10 +78,10 @@ gerar_perfil_municipal(nome="Maricá", uf="RJ")
 
 ## Resposta final do agente (impressa por `agent.py`)
 
-> **Maricá (RJ)** — código IBGE `3302904`
+> **Maricá (RJ)** — código IBGE `3302700`
 >
 > - **Região**: Sudeste
-> - **Microrregião**: Rio de Janeiro (código 33007)
+> - **Microrregião**: Rio de Janeiro (código 33018)
 > - **População estimada (2024)**: ~187.051 habitantes
 >
 > **Fonte**: IBGE — API de Localidades e Agregados/SIDRA (agregado 6579 —
@@ -120,7 +120,7 @@ listados é o desejado, em vez de escolher um arbitrariamente.
 ## Como verificar a fonte
 
 - Identificação do município:
-  `https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302904`
+  `https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3302700`
 - População estimada:
-  `https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324?localidades=N6[3302904]`
+  `https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324?localidades=N6[3302700]`
 - Ambos acessíveis diretamente no navegador, sem autenticação.

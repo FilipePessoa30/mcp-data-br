@@ -7,7 +7,7 @@
 gerar_perfil_municipal(nome="Maricá", uf="RJ")
 ```
 
-> Da resposta, anote `data.municipio.codigo_ibge` (`3302904` para Maricá) —
+> Da resposta, anote `data.municipio.codigo_ibge` (`3302700` para Maricá) —
 > será usado no passo 3.
 
 2. **`listar_periodos_agregado`** (opcional) — confirma quais períodos estão
@@ -24,7 +24,7 @@ listar_periodos_agregado(agregado_id="6579")
 consultar_agregado(
     agregado_id="6579",
     variaveis="9324",
-    localidades="N6[3302904]",
+    localidades="N6[3302700]",
     periodos="-5",
 )
 ```

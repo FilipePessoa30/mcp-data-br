@@ -19,7 +19,7 @@ about a specific municipality (e.g. *"tell me about Niterói"*).
 
 - *"I want a summary of São Paulo (SP): where it is, which region it's in,
   and how many inhabitants it has today, according to IBGE."*
-- *"Make a profile for the municipality with IBGE code 3302904."* — the agent
+- *"Make a profile for the municipality with IBGE code 3302700."* — the agent
   must first discover the name/state
   ([`obter_municipio_por_codigo`](../tools/localidades.md#6-obter_municipio_por_codigo))
   before it can call `gerar_perfil_municipal(nome=..., uf=...)`.
