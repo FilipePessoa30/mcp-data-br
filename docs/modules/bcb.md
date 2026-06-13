@@ -9,7 +9,7 @@
 
 `mcp-bcb` will expose Banco Central do Brasil economic and financial indicators (SGS time series, exchange rates, Selic) as typed, traceable
 [MCP](https://modelcontextprotocol.io/) tools, following the conventions
-established by [`mcp-ibge`](../../packages/mcp_ibge/README.md) (see
+established by [`mcp-ibge`](ibge.md) (see
 [Architecture](../architecture.md) and [Data Sources](../data_sources.md)).
 
 ## Planned data sources

@@ -9,7 +9,7 @@
 
 `mcp-transparencia` will expose the Brazilian Federal Transparency Portal (Portal da Transparência / CGU) — public spending, contracts and sanctions as typed, traceable
 [MCP](https://modelcontextprotocol.io/) tools, following the conventions
-established by [`mcp-ibge`](../../packages/mcp_ibge/README.md) (see
+established by [`mcp-ibge`](ibge.md) (see
 [Architecture](../architecture.md) and [Data Sources](../data_sources.md)).
 
 ## Planned data sources

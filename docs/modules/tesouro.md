@@ -9,7 +9,7 @@
 
 `mcp-tesouro` will expose Brazilian National Treasury fiscal data (Tesouro Transparente / SICONFI) — federal, state and municipal finances as typed, traceable
 [MCP](https://modelcontextprotocol.io/) tools, following the conventions
-established by [`mcp-ibge`](../../packages/mcp_ibge/README.md) (see
+established by [`mcp-ibge`](ibge.md) (see
 [Architecture](../architecture.md) and [Data Sources](../data_sources.md)).
 
 ## Planned data sources

@@ -9,7 +9,7 @@
 
 `mcp-rio` will expose City of Rio de Janeiro open data (Data.Rio) — municipal datasets and indicators as typed, traceable
 [MCP](https://modelcontextprotocol.io/) tools, following the conventions
-established by [`mcp-ibge`](../../packages/mcp_ibge/README.md) (see
+established by [`mcp-ibge`](ibge.md) (see
 [Architecture](../architecture.md) and [Data Sources](../data_sources.md)).
 
 ## Planned data sources

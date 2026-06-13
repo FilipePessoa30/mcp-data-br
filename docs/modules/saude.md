@@ -9,7 +9,7 @@
 
 `mcp-saude` will expose Brazilian public health data (DataSUS / Ministério da Saúde) — facilities and indicators by município/UF as typed, traceable
 [MCP](https://modelcontextprotocol.io/) tools, following the conventions
-established by [`mcp-ibge`](../../packages/mcp_ibge/README.md) (see
+established by [`mcp-ibge`](ibge.md) (see
 [Architecture](../architecture.md) and [Data Sources](../data_sources.md)).
 
 ## Planned data sources
